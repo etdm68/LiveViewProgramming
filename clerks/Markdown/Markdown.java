@@ -13,9 +13,9 @@ record Markdown(LiveView view) implements Clerk {
             </div>
             """);
         Clerk.call(view, STR."""
-            document.getElementById("\{ID}").innerHTML = marked.parse(`
-            \{markdownText}
-            `);
+            document.getElementById("\{ID}").innerHTML = marked.parse("
+            \{ markdownText.replaceAll("\\`", "\\\\`")}
+            ");
             """);
         return this;
     }
