@@ -54,6 +54,8 @@ static String cutOut(String fileName, boolean includeStartLabel, boolean include
 
 Labels sind Zeichenketten, nach denen als vollständige Textzeile in der angegebenen Datei gesucht wird. Mit den boolschen Werten wird angegeben, ob das öffnende bzw. schliessende Label beim Ausschnitt mit inkludiert werden soll.
 
+### Beispiele
+
 Nehmen wir als Beispiel eine Datei mit folgendem Inhalt:
 
 ```text
@@ -108,12 +110,20 @@ Zunächst wird die erste Textstelle zwischen `LabelA` und `LabelB` ausgeschnitte
 ```
 <!-- LabelAB -->
 
-Der Algorithmus zu `Text.cutOut(...)`, um einen Ausschnitt, ein Snippet davon zu erstellen, funktioniert wie folgt:
+### Der Algorithmus
+
+Der Algorithmus zu `Text.cutOut(...)`, um einen Ausschnitt aus einer Textdatei, ein Snippet davon zu erstellen, funktioniert wie folgt:
 
 0. Starte im Modus, die Textzeilen einer Datei zu überspringen: `skipLines = true`.
 1. Gehe die Datei Textzeile für Textzeile durch
 2. Wenn die Textzeile einem Label entspricht, dann gehe wie folgt vor: (a) Wenn entweder `skipLines` und `includeStartLabel` wahr sind, oder wenn `!skipLines` und `includeEndLabel` wahr sind, dann ergänze die Labelzeile zum Snippet. (b) Wechsel den Modus `skipLines = !skipLines` und gehe zur nächsten Textzeile, d.h. zum Anfang von Schritt 2.
 3. Entspricht die Textzeile keinem Label, dann: (a) Füge die Zeile nur dann dem Snippet hinzu, wenn `skipLines` nicht wahr ist. (b) Gehe zur nächsten Textzeile, d.h. zu Schritt 2.
+
+Als Java-Methode:
+
+```java
+\{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\n\"", "\\\\xn\"")}
+```
 
 
 """);
