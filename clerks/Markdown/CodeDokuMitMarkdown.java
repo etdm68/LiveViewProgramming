@@ -56,14 +56,7 @@ Labels sind Zeichenketten, nach denen als vollständige Textzeile in der angegeb
 
 Nehmen wir als Beispiel eine Datei mit folgendem Inhalt:
 
-```
-\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "// STR-Beispiel")}
-```
-
-""");
-
-/**
-// Gesamtes CutOut-Beispiel
+```text
 // LabelA
 1. Textstelle, gerahmt von einem LabelA und einem LabelB
 // LabelB
@@ -73,13 +66,56 @@ Textstelle, umschlossen von einem LabelC
 // LabelA
 2. Textstelle, gerahmt von einem LabelA und einem LabelB
 // LabelB
-// Gesamtes CutOut-Beispiel
-*/
+```
+
+Mit dem folgenden Aufruf
+
+```
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelCff -->").replaceAll("```\\n", "")}
+```
+
+ergibt sich
+
+<!-- LabelCff -->
+```
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", false, false, "// LabelC")}
+```
+<!-- LabelCff -->
+
+Setzt man einen der boolschen Werte auf `true`, wird das entsprechende Label mit übernommen.
+
+```
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelCft -->").replaceAll("```\\n", "")}
+```
+
+<!-- LabelCft -->
+```
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", false, true, "// LabelC")}
+```
+<!-- LabelCft -->
+
+Sind mehrere Stellen mit dem gleichen Label belegt, kann man diese Bereiche ausschneiden. Wenn die boolschen Werte beide `false` sind, kann man den Aufruf verkürzen.
+
+```
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelAB -->").replaceAll("```\\n", "")}
+```
+
+Zunächst wird die erste Textstelle zwischen `LabelA` und `LabelB` ausgeschnitten, dann die zweite.
+
+<!-- LabelAB -->
+```
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "// LabelA", "// LabelB")}
+```
+<!-- LabelAB -->
+
+Der Algorithmus zu `Text.cutOut(...)`, um einen Ausschnitt, ein Snippet davon zu erstellen, funktioniert wie folgt:
+
+0. Starte im Modus, die Textzeilen einer Datei zu überspringen: `skipLines = true`.
+1. Gehe die Datei Textzeile für Textzeile durch
+2. Wenn die Textzeile einem Label entspricht, dann gehe wie folgt vor: (a) Wenn entweder `skipLines` und `includeStartLabel` wahr sind, oder wenn `!skipLines` und `includeEndLabel` wahr sind, dann ergänze die Labelzeile zum Snippet. (b) Wechsel den Modus `skipLines = !skipLines` und gehe zur nächsten Textzeile, d.h. zum Anfang von Schritt 2.
+3. Entspricht die Textzeile keinem Label, dann: (a) Füge die Zeile nur dann dem Snippet hinzu, wenn `skipLines` nicht wahr ist. (b) Gehe zur nächsten Textzeile, d.h. zu Schritt 2.
 
 
+""");
 
-// Den vom `LabelC` umschlossenen Text bekommt man mit
 
-// ```
-// \{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java"), false, false, "// LabelC"}
-// ```
