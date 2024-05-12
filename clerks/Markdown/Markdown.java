@@ -15,8 +15,17 @@ record Markdown(LiveView view) implements Clerk {
                 typographer: true
             });
             """);
+        // Clerk.write(view, STR."""
+        //     <script class="persistent">
+        //         const md = markdownit({
+        //             html: true,
+        //             linkify: true,
+        //             typographer: true
+        //         });
+        //     </script>
+        //     """);
     }
-    public Markdown write(String markdownText) {
+    public String write(String markdownText) {
         String ID = Clerk.generateID(10);
         Clerk.write(view, STR."""
             <div id="\{ID}">
@@ -27,6 +36,6 @@ record Markdown(LiveView view) implements Clerk {
             var markdown = document.getElementById("\{ID}");
             markdown.innerHTML = md.render(markdown.textContent);
             """);
-        return this;
+        return ID;
     }
 }
