@@ -41,7 +41,7 @@ class Text { // Class with static methods for file operations
             System.err.printf("Error reading %s\n", e.getMessage());
             System.exit(1);
         }
-        return snippet.stream().collect(Collectors.joining("\n")) + "\n";
+        return snippet.stream().collect(Collectors.joining("\n"));
     }
     // done
 
