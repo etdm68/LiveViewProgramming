@@ -122,10 +122,12 @@ Der Algorithmus zu `Text.cutOut(...)`, um einen Ausschnitt aus einer Textdatei, 
 Als Java-Methode:
 
 ```java
-\{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\n\"", "\\\\xn\"")}
+\{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\", Matcher.quoteReplacement("\\n"))}
 ```
 
 
 """);
 
 
+// \{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\n\"", "\\\\xn\"")}
+// \{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\n", Matcher.quoteReplacement("\\n"))}
