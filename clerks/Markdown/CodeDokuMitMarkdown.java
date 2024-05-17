@@ -52,11 +52,11 @@ Mit dem Skill `Text` kann Text aus einer Datei ausgeschnitten werden. Der Method
 static String cutOut(String fileName, boolean includeStartLabel, boolean includeEndLabel, String... labels)
 ```
 
-Labels sind Zeichenketten, nach denen als vollständige Textzeile in der angegebenen Datei gesucht wird. Mit den boolschen Werten wird angegeben, ob das öffnende bzw. schliessende Label beim Ausschnitt mit inkludiert werden soll.
+Labels sind Zeichenketten, nach denen als vollständige Textzeile in der angegebenen Datei gesucht wird. Mit den boolschen Werten wird angegeben, ob das öffnende bzw. schliessende Label beim Ausschnitt mit inkludiert, d.h. einbezogen werden soll oder nicht.
 
 ### Beispiele
 
-Nehmen wir als Beispiel eine Datei mit folgendem Inhalt:
+Nehmen wir eine Datei mit folgendem Inhalt:
 
 ```text
 // LabelA
@@ -73,7 +73,7 @@ Textstelle, umschlossen von einem LabelC
 Mit dem folgenden Aufruf
 
 ```
-\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelCff -->").replaceAll("```\\n", "")}
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelCff -->").replaceAll("(\\n)?```(\\n)?","")}
 ```
 
 ergibt sich
@@ -87,8 +87,10 @@ ergibt sich
 Setzt man einen der boolschen Werte auf `true`, wird das entsprechende Label mit übernommen.
 
 ```
-\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelCft -->").replaceAll("```\\n", "")}
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelCft -->").replaceAll("(\\n)?```(\\n)?","")}
 ```
+
+Das Ergebnis sieht so aus:
 
 <!-- LabelCft -->
 ```
@@ -99,7 +101,7 @@ Setzt man einen der boolschen Werte auf `true`, wird das entsprechende Label mit
 Sind mehrere Stellen mit dem gleichen Label belegt, kann man diese Bereiche ausschneiden. Wenn die boolschen Werte beide `false` sind, kann man den Aufruf verkürzen.
 
 ```
-\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelAB -->").replaceAll("```\\n", "")}
+\{Text.cutOut("clerks/Markdown/CodeDokuMitMarkdown.java", "<!-- LabelAB -->").replaceAll("(\\n)?```(\\n)?","")}
 ```
 
 Zunächst wird die erste Textstelle zwischen `LabelA` und `LabelB` ausgeschnitten, dann die zweite.
@@ -122,12 +124,8 @@ Der Algorithmus zu `Text.cutOut(...)`, um einen Ausschnitt aus einer Textdatei, 
 Als Java-Methode:
 
 ```java
-\{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\", Matcher.quoteReplacement("\\n"))}
+\{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done")}
 ```
 
 
 """);
-
-
-// \{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\n\"", "\\\\xn\"")}
-// \{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done").replaceAll("\\\\n", Matcher.quoteReplacement("\\n"))}
