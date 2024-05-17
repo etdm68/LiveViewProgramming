@@ -127,5 +127,4 @@ Als Java-Methode:
 \{Text.cutOut("skills/Text/Text.java", "// Cut out a snippet", "// done")}
 ```
 
-
 """);

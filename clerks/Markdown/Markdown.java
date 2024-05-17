@@ -9,32 +9,27 @@ record Markdown(LiveView view) implements Clerk {
         String localPath = "clerks/Markdown/markdown-it.min.js";
         Clerk.load(view, onlinePath, localPath);
         Clerk.script(view, STR."""
-            const md = markdownit({
+            var md = markdownit({
                 html: true,
                 linkify: true,
                 typographer: true
             });
             """);
-        // Clerk.write(view, STR."""
-        //     <script class="persistent">
-        //         const md = markdownit({
-        //             html: true,
-        //             linkify: true,
-        //             typographer: true
-        //         });
-        //     </script>
-        //     """);
     }
     public String write(String markdownText) {
         String ID = Clerk.generateID(10);
+        // Using `preformatted` is a hack to get a Java String into the Browser without interpretation
         Clerk.write(view, STR."""
-            <div id="\{ID}">
+            <script id="\{ID}" type='preformatted'>
             \{markdownText}
-            </div>
+            </script>
             """);
         Clerk.call(view, STR."""
-            var markdown = document.getElementById("\{ID}");
-            markdown.innerHTML = md.render(markdown.textContent);
+            var scriptElement = document.getElementById("\{ID}");
+            var divElement = document.createElement('div');
+            divElement.id = scriptElement.id;
+            divElement.innerHTML = md.render(scriptElement.textContent);
+            scriptElement.parentNode.replaceChild(divElement, scriptElement);
             """);
         return ID;
     }
