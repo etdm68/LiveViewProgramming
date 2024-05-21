@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
+
+<style>
+    body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 20px;
+    }
+    pre, code {
+    background: #f4f4f4;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    }
+</style>
+
+
+# Your Markdown Content
+
+This is a paragraph with **bold** and *italic* text.
+
+## Subheading
+
+- Item 1
+- Item 2
+- Item 3
+
+```javascript
+console.log("Hello, world!");
+```
+
+Inline code: `var x = 10;`
+
+Mathematical formula: $E = mc^2$
+
+<!-- End of Markdown Content -->
+<script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/@iktakahiro/markdown-it-katex/index.min.js"></script> -->
+<script type="module"> import @iktakahiro/markdown-it-katex from https://cdn.jsdelivr.net/npm/@iktakahiro/markdown-it-katex@4.0.1/+esm</script>
+
+
+<script>
+  (function() {
+    var bodyContent = document.body.innerHTML;
+    var endComment = '<!-- End of Markdown Content -->';
+    var endIndex = bodyContent.indexOf(endComment);
+    if (endIndex !== -1) {
+      bodyContent = bodyContent.slice(0, endIndex);
+    }
+    var md = window.markdownit();
+    document.body.innerHTML = md.render(bodyContent);
+  })();
+</script>
+</script>

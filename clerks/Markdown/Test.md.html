@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown-it Example</title>
+  <!-- CSS for styling -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 20px;
+    }
+    pre, code {
+      background: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="content"></div>
+
+  <!-- Include markdown-it library -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var md = window.markdownit();
+      var markdownText = `
+# Your Markdown Content
+
+This is a paragraph with **bold** and *italic* text.
+
+## Subheading
+
+- Item 1
+- Item 2
+- Item 3
+
+\`\`\`javascript
+console.log("Hello, world!");
+\`\`\`
+
+Inline code: \`var x = 10;\`
+      `;
+
+      var result = md.render(markdownText);
+      document.getElementById('content').innerHTML = result;
+    });
+  </script>
+</body>
+</html>

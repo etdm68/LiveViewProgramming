@@ -2,10 +2,13 @@ import static java.lang.StringTemplate.STR;
 
 record MarkdownIt(LiveView view) implements Clerk {
     public MarkdownIt {
-        String onlinePath = "https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js";
-        String localPath = "clerks/Markdown/markdown-it.min.js";
-        Clerk.load(view, onlinePath, localPath);
+        // String onlinePath = "https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js";
+        // String localPath = "clerks/Markdown/markdown-it.min.js";
+        // Clerk.load(view, onlinePath, localPath);
+        Clerk.load(view, "clerks/Markdown/markdown-it.min.js");
         Clerk.load(view, "clerks/Markdown/highlight.min.js");
+        Clerk.load(view, "clerks/Markdown/katex.min.js");
+        Clerk.load(view, "clerks/Markdown/markdown-it.katex.js");
         // Clerk.script(view, STR."""
         //     var md = markdownit({
         //         html: true,
@@ -13,7 +16,7 @@ record MarkdownIt(LiveView view) implements Clerk {
         //         typographer: true
         //     });
         //     """);
-        Clerk.script(view, STR."""
+        Clerk.script(view, STR."""    
             var md = markdownit({
                 highlight: function (str, lang) {
                     if (lang && hljs.getLanguage(lang)) {
@@ -26,7 +29,7 @@ record MarkdownIt(LiveView view) implements Clerk {
                 html: true,
                 linkify: true,
                 typographer: true
-            });
+            }).use(markdownitKatex);
             """);
     }
     public String write(String markdownText) {
