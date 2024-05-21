@@ -42,7 +42,7 @@ blockquote {
 }
 
 code {
-    font-family: 'Courier New', monospace;
+    font-family: 'Consolas', Courier, monospace;
     background-color: #eee;
     padding: 0px 0px;
     font-size: 90%;
