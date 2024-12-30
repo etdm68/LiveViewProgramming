@@ -1,8 +1,8 @@
-package LiveViewProgramming;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.IntStream;
+import java.awt.List;
 import java.awt.Point;
 
 enum Types{
@@ -13,26 +13,46 @@ class Gate{
     String type;
     ArrayList<Boolean> inputs;
     Boolean output;
-
+    ArrayList<Point> inputCoordinates = new ArrayList<>();
+    Point[] outputCoordinates = new Point[1];
+    String name = "";
+    static int orCount;
+    static int andCount;
+    static int xorCount;
+    static int norCount;
+    static int nandCount;
+    static int notCount;
     Gate(Types type){
         switch (type) {
             case Types.OR:
                 this.type = "OR";
+                orCount++;
+                name = "OR" + orCount;
                 break;
             case Types.AND:
                 this.type = "AND";
+                andCount++;
+                name = "AND" + andCount;
                 break;
             case Types.NOR:
                 this.type = "NOR";
+                norCount++;
+                name = "NOR" + norCount;
                 break;
             case Types.NAND:
                 this.type = "NAND";
+                nandCount++;
+                name = "NAND" + nandCount;
                 break;
             case Types.XOR:
                 this.type = "XOR";
+                xorCount++;
+                name = "XOR" + xorCount;
                 break;
             case Types.NOT:
                 this.type = "NOT";
+                notCount++;
+                name = "NOT" + notCount;
                 break;
             default:
                 throw new IllegalArgumentException("Wrong type. Only (OR,AND,NAND,NOR,XOR,NOT) are available");
@@ -75,7 +95,27 @@ class Gate{
                 output = inputs.get(0) ^ inputs.get(1);
                 break;
         }
-    }+
+    }
+
+    void getCoordInOut(int x, int y, Gate gate){
+        
+        if(gate.type.equals("NOT")){
+            Point input1 = new Point(x-35,y);
+            Point output = new Point(x+35,y);
+            gate.inputCoordinates.add(input1);
+            gate.outputCoordinates[0] = output;
+        }else{
+            Point input1 = new Point(x-35,y-10);
+            Point input2 = new Point(x-35,y+10);
+            Point output = new Point(x+35, y);
+            gate.inputCoordinates.add(input1);
+            gate.inputCoordinates.add(input2);
+            gate.outputCoordinates[0] = output;
+        }
+        
+    }
+
+    
 }
 
 
@@ -124,8 +164,8 @@ class Circuit<T>{
             drawLeft();
             drawRight();
             drawBottom();
-            drawLettersTop();
-            drawLettersLeft();
+            drawLettersTopBetter();
+            drawLettersLeftBetter();
             turtle.right(90);
         }
 
@@ -144,7 +184,7 @@ class Circuit<T>{
             }
         }
 
-
+        /* 
         void drawLettersLeft(){
             int x = 18, y = 110;
             turtle.color(4, 1, 15);
@@ -154,7 +194,19 @@ class Circuit<T>{
                 turtle.moveTo(x, y += 100);
             }
         }
+        */
 
+        void drawLettersLeftBetter(){
+            int x = 18, y = 110;
+            turtle.color(4,1,15).moveTo(x, y);
+            IntStream.range(1, row+1).forEach(i->{turtle.text(String.valueOf(i), Font.ARIAL, 30, null).moveTo(x, (i*100)+y);});
+        }
+        void drawLettersTopBetter(){
+            int x = 90, y = 30;
+            turtle.color(4,1,15).moveTo(x, y).left(90).text("E", Font.ARIAL,30,null);
+            IntStream.range(2, col+1).forEach(i -> {turtle.moveTo((90*i)+(i-1)*10, y).text(String.valueOf(i), Font.ARIAL, 30, null);});
+        }
+        /* 
         void drawLettersTop(){
             int x = 90, y = 30;
             turtle.color(4, 1, 15);
@@ -166,6 +218,7 @@ class Circuit<T>{
                 turtle.text(String.valueOf(i), Font.ARIAL, 30, null);
             }
         }
+        */
         void drawRight(){
             int x = (col * 100) + 50, y = 50;
             turtle.color(61, 3, 252);
@@ -227,12 +280,21 @@ class Circuit<T>{
         this.col += col;
         this.turtle = new Turtle(114*this.col,114*this.row);
         new FieldDraw().drawCircuitField();
-        
+        drawAllComponents();
     }
 
-    //Einfügen eines Gatters. Achtung row und col fangen bei 0 an
+    //Einfügen eines Gatters
     //Es ist darf auch nicht möglich sein in der ersten spalte ein Gate zu platziren da diese nur für eingänge sind 
-
+    void drawAllComponents(){
+        for(Map.Entry<Point, T> entry : componentPoints.entrySet()){
+            Point point = entry.getKey();
+            T component = entry.getValue();
+            if(component instanceof Gate) {
+                Gate gate = (Gate) component;
+                drawGates(gate, point);
+            }
+        }
+    }
     void addComponent(T component,int row,int col){
         int cellWidth = 100, cellHeight = 100;
         Point point = new Point(col,row);
@@ -242,31 +304,20 @@ class Circuit<T>{
         if(component instanceof Gate){
             Gate gate = (Gate) component;
             if(col == 1) throw new IllegalArgumentException("this column is only for inputs");
+            gate.getCoordInOut(x, y, gate);
             drawGates(gate, point);
             componentPoints.put(point, component);
         }
     }
-
-    /* 
-    void addGate(T component,int row,int col){
-        assert row >= 0 && col >= 0;
-        Point temp = coordinates.get(row).get(col);
-        boolean isPosFree = gatePoints.values().stream().anyMatch(point -> point.equals(temp));
-        if(!isPosFree){
-            if(component instanceof Gate){
-                Gate gate = (Gate) component;
-                assert col > 0;
-                drawGates(gate, temp);
-                gatePoints.put(component, temp);
-            }
-            else if(component instanceof Wire){
-                Wire wire = (Wire) component;
-            }
-        } 
-        else throw new IllegalArgumentException("this field already got an component");
+    //Methode um zwei Gatter mit einer Leitung zu verbinden
+    void connectGates(int row, int col, int endRow, int endCol, int input){
         
     }
-    */
+    
+    
+    
+
+    
     void drawGates(Gate gate,Point point){
         switch (gate.type) {
             case "OR":
@@ -390,20 +441,13 @@ class Circuit<T>{
 
 }
 
+
+
 class Wire{
     
 }
 
-/* 
-void addGate(Gate gate,int row,int col){
-    assert row > 0 && col > 0;
-    if(col < 1) throw new IllegalArgumentException("Die erste Spalte ist für die Eingänge reserviert");
-    Point temp = coordinates.get(row).get(col);
-    Boolean isPosFree = gatePoints.values().stream().anyMatch(point -> point.equals(temp));//Prüfen ob auf dem Feld schon ein Gate ist
-    if(isPosFree) throw new IllegalArgumentException("there is already a Gate on this position");
-    turtle.moveTo(temp.getX(), temp.getY());
-    drawGates(gate,temp);
-    gatePoints.put(gate, temp);
-}
-*/
+
+
+//Circuit<Object> c = new Circuit<>("c");
 
