@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import java.awt.List;
 import java.awt.Point;
@@ -107,13 +108,13 @@ class Gate{
     void getCoordInOut(double x, double y, Gate gate){
         
         if(gate.type.equals("NOT")){
-            Point input1 = new Point((int)x-35,(int)y);
+            Point input1 = new Point((int)x-30,(int)y);
             Point output = new Point((int)x+35,(int)y);
             gate.inputCoordinates.add(input1);
             gate.outputCoordinates[0] = output;
         }else{
-            Point input1 = new Point((int)x-35,(int)y-10);
-            Point input2 = new Point((int)x-35,(int)y+10);
+            Point input1 = new Point((int)x-30,(int)y-10);
+            Point input2 = new Point((int)x-30,(int)y+10);
             Point output = new Point((int)x+35,(int)y);
             gate.inputCoordinates.add(input1);
             gate.inputCoordinates.add(input2);
@@ -121,8 +122,6 @@ class Gate{
         }
         
     }
-
-    
 }
 
 
@@ -135,8 +134,8 @@ class Circuit{
     Turtle turtle;
     int row;
     int col;
-    
-    
+    int dynamicOffset = 5;
+    private ArrayList<Integer> offsets = new ArrayList<>();
     //Feld erstellen mit einer Standart Größe
     Circuit(String name){
         this(name, 6, 6);
@@ -151,6 +150,9 @@ class Circuit{
         this.inputs = new ArrayList<>();
         this.outputs = new ArrayList<>();
         turtle = new Turtle(col*114,row*114);
+        for(int i = 1; i <= col; i++){
+            offsets.add(5);
+        }
         new FieldDraw().drawCircuitField();
     }
     private class FieldDraw{
@@ -307,6 +309,7 @@ class Circuit{
         drawAllInputs();
         drawAllComponents();
     }
+
     //Wird benötigt um nachdem ändern eines Inputs das Feld zu verändern
     void drawAllInputs(){
         inputs.forEach(input -> drawInputE(1*100, input.row*100, input));
@@ -362,12 +365,16 @@ class Circuit{
     //Output darf nur als end verwendet werden
     
     void connect(String start, String end){
+        if(start.equals(end)) throw new IllegalArgumentException("It is not allowed to connect a Component with itself");
         Object startComponent = findStartComponent(start);
         Object endComponent = findEndComponent(end);
-
+        //Pattern Matching
         switch (startComponent) {
             case Gate startGate : 
                 if(endComponent instanceof Gate endGate){
+                    if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && 
+                    endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of this gate are already occupied");
+                    
                     endGate.inputs.add(startGate.output);
                     startGate.connections.add(endGate);
                     drawConnGateToGate(startGate, endGate);
@@ -380,9 +387,13 @@ class Circuit{
                 break;
             case Input input :
                 if(endComponent instanceof Gate endGate){
+                    if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && 
+                    endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of this gate are already occupied");
+
                     endGate.inputs.add(input.value);
                     input.connectionsToGates.add(endGate);
                     drawConnInToGate(input, endGate);
+                    break;
                 }
                 else if(endComponent instanceof Output) throw new IllegalArgumentException("It is not allowed to connect an input with an output");
                 else throw new IllegalArgumentException("Wrong Component");
@@ -394,6 +405,8 @@ class Circuit{
     }
         
     Object findEndComponent(String end){
+
+        //Optional<Gate> 
         for(Gate gate : gates){
             if(gate.name.equals(end)){
                 return gate;
@@ -421,25 +434,69 @@ class Circuit{
     }
     
     
-    double checkIfGateIsNearByX(double x, double y, String start, String end){
+    double[] checkIfGateIsNearByX(double x, double y, String start, String end){
+        double[] result = new double[2];
         for(Gate gate : gates){
-            if(gate.name.equals(start) || gate.name.equals(end)) continue;
-            else{
-                
+            if(((gate.gatePosition.getX()*100)-40) - x == 0 && (gate.gatePosition.getY()*100) - y == 0){
+                if(gate.name.equals(start) || gate.name.equals(end)){
+                    result[0] = x;
+                    result[1] = y;
+                    return result;
+                }
+                else {
+                    turtle.right(90)
+                    .forward(30)
+                    .left(90)
+                    .forward(70);
+                    result[0] = x + 70;
+                    result[1] = y + 30;
+                    return result;
+                }
             }
         }
-        return y;
+        result[0] = x;
+        result[1] = y;
+
+        /* 
+        double[] yTemp = {y};
+        double[] xTemp = {x};
+        double[] result = new double[2];
+        gates.forEach(gate -> {
+            if((gate.gatePosition.getX()-40) - x == 0 && gate.gatePosition.getY() - y == 0){
+                if(gate.name.equals(start) || gate.name.equals(end)){
+                    result[0] = xTemp[0];
+                    result[1] = yTemp[0];
+                    
+                }
+                else {
+                    turtle.right(90)
+                    .forward(30)
+                    .left(90)
+                    .forward(70);
+                    yTemp[0] = yTemp[0] + 30;
+                    xTemp[0] = xTemp[0] + 70;
+                    result[0] = xTemp[0];
+                    result[1] = yTemp[0];
+                }
+            }
+        });
+        */
+        return result;
     }
     
     void drawConnectionToOutput(){
 
     }
     void drawConnections(double xStart, double yStart, double xEnd, double yEnd, String start, String end){
+        
         turtle.moveTo(xStart, yStart);
-        while(xStart != xEnd){
+        while(xStart != xEnd-dynamicOffset){
+            System.out.println(xStart + " " + yStart);
+            double[] result = checkIfGateIsNearByX(xStart, yStart, start, end);
+            xStart = result[0];
+            yStart = result[1];
             turtle.penDown().forward(1);
             xStart++;
-            yStart = checkIfGateIsNearByX(xStart, yStart, start, end);
         }
         if(yStart < yEnd){
             turtle.right(90);
@@ -447,7 +504,7 @@ class Circuit{
                 turtle.penDown().forward(1);
                 yStart++;
             }
-            turtle.left(90);
+            turtle.left(90).forward(dynamicOffset);
         }
         else{
             turtle.left(90);
@@ -455,8 +512,9 @@ class Circuit{
                 turtle.penDown().forward(1);
                 yStart--;
             }
-            turtle.right(90);
+            turtle.right(90).forward(dynamicOffset);
         }
+        dynamicOffset += 5;
     }
     void drawConnGateToGate(Gate startGate, Gate endGate){
         double startXPos = startGate.outputCoordinates[0].getX(), startYPos = startGate.outputCoordinates[0].getY();
@@ -538,13 +596,19 @@ class Circuit{
     }
     void drawInput(double x, double y){
         turtle.moveTo(x, y);
-        turtle.penUp().left(180).forward(25).right(90).forward(10).left(90).penDown().forward(10).backward(10);
-        turtle.penUp().left(90).forward(20).right(90).penDown().forward(10);
+        turtle.penUp().left(180).forward(25).right(90).forward(10).left(90).penDown().forward(5).backward(5);
+        turtle.penUp().left(90).forward(20).right(90).penDown().forward(5);
         turtle.right(180);
     }
 
     void drawGateName(double x, double y, Gate gate){
-        turtle.moveTo(x, y).left(90).penUp().forward(30).left(90).forward(20).right(90).text(gate.name, Font.ARIAL, 15, null).right(90);
+        turtle.moveTo(x, y)
+        .right(90)
+        .penUp().forward(10)
+        .right(90).forward(14)
+        .right(90)
+        .text(gate.name, Font.COURIER, 11, null).right(90);
+        //turtle.moveTo(x, y).left(90).penUp().forward(30).left(90).forward(20).right(90).text(gate.name, Font.ARIAL, 15, null).right(90);
     }
 
     void drawOR(double x, double y, Gate gate){
@@ -618,6 +682,10 @@ class Circuit{
     }
 
     void drawInputE(double x, double y, Input input){
+        turtle.moveTo(x-35, y-20)
+        .left(90)
+        .text(input.name, Font.ARIAL,15,null)
+        .right(90);
         if(input.value == 1){
             turtle.color(11, 128, 39);
         }
@@ -626,9 +694,10 @@ class Circuit{
         .left(180)
         .penDown()
         .forward(20)
-        .penUp().forward(10)
+        .penUp().forward(15)
         .right(90)
         .text(String.valueOf(input.value), Font.ARIAL, 15, null)
+        .forward(20)
         .right(90)
         .color(10, 10, 10);
     }
