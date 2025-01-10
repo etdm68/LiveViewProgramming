@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -131,11 +133,13 @@ class Circuit{
     ArrayList<Gate> gates;
     ArrayList<Input> inputs;
     ArrayList<Output> outputs;
+    ArrayList<ArrayList<Boolean>> fieldCheck = new ArrayList<>();
     Turtle turtle;
     int row;
     int col;
     int dynamicOffset = 5;
     private ArrayList<Integer> offsets = new ArrayList<>();
+    private ArrayList<Integer> yOffsets = new ArrayList<>();
     //Feld erstellen mit einer Standart Größe
     Circuit(String name){
         this(name, 6, 6);
@@ -152,6 +156,16 @@ class Circuit{
         turtle = new Turtle(col*114,row*114);
         for(int i = 1; i <= col; i++){
             offsets.add(5);
+        }
+        for(int i = 1; i <= row; i++){
+            yOffsets.add(5);
+        }
+        for(int i = 1; i <= row; i++){
+            ArrayList<Boolean> rows = new ArrayList<>();
+            for(int j = 1; j <= col; j++){
+                rows.add(false);
+            }
+            fieldCheck.add(rows);
         }
         new FieldDraw().drawCircuitField();
     }
@@ -284,10 +298,12 @@ class Circuit{
         this.col += col;
         this.turtle = new Turtle(114*this.col,114*this.row);
         new FieldDraw().drawCircuitField();
+        addOffsets(col);
         outputs.forEach(output -> output.col += col);
         drawAllComponents();
         drawAllInputs();
         drawAllOutputs();
+        drawAllConnections();
     }
     //Methode zum Einfügen von Inputs
     Circuit addInput(int row,HiLo hilo){
@@ -309,7 +325,61 @@ class Circuit{
         drawAllInputs();
         drawAllComponents();
     }
-
+    int findYOffset(String name){
+        if(gates.stream().anyMatch(gate -> gate.name.equals(name))){
+            Optional<Gate> tempGate = gates.stream()
+                            .filter(gate -> gate.name.equals(name))
+                            .findFirst();
+            if(tempGate.isPresent()){
+                Gate gate = tempGate.get();
+                int offset = yOffsets.get((int)gate.gatePosition.getY()-1);
+                syncYOffsets((int)gate.gatePosition.getY());
+                return offset;
+            }
+        }
+        return 5;
+    }
+    void syncYOffsets(int index){
+        yOffsets.set(index-1, yOffsets.get(index-1) + 5);
+    }
+    void addYOffsets(int row){
+        for(int i = 1; i <= row; i++){
+            yOffsets.add(5);
+        }
+    }
+    int findOffset(String name){
+        if(gates.stream().anyMatch(gate -> gate.name.equals(name))){
+            Optional<Gate> tempGate = gates.stream()
+                            .filter(gate -> gate.name.equals(name))
+                            .findFirst();
+            if(tempGate.isPresent()){
+                Gate gate = tempGate.get();
+                int offset = offsets.get((int)gate.gatePosition.getX()-1);
+                syncOffsets((int)gate.gatePosition.getX());
+                return offset;
+            }    
+        }
+        if(outputs.stream().anyMatch(output -> output.name.equals(name))){
+            Optional<Output> tempOutput = outputs.stream()
+                                .filter(output -> output.name.equals(name))
+                                .findFirst();
+            if(tempOutput.isPresent()){
+                Output output = tempOutput.get();
+                int offset = offsets.get(output.col-1);
+                syncOffsets(output.col);
+                return offset;
+            }
+        }
+        return 5;
+    }
+    void syncOffsets(int index){
+        offsets.set(index-1, offsets.get(index-1)+5);
+    }
+    void addOffsets(int col){
+        for(int i = 1; i <= col; i++){
+            offsets.add(5);
+        }
+    }
     //Wird benötigt um nachdem ändern eines Inputs das Feld zu verändern
     void drawAllInputs(){
         inputs.forEach(input -> drawInputE(1*100, input.row*100, input));
@@ -319,6 +389,23 @@ class Circuit{
     }
     void drawAllOutputs(){
         outputs.forEach(output -> drawOutputA(col*100, output.row*100, output));
+    }
+    void drawAllConnections(){
+        offsets.forEach(offset -> offset = 5);
+        yOffsets.forEach(yoffset -> yoffset = 5);
+        inputs.forEach(input -> {
+            input.connectionsToGates.forEach(gate -> drawConnInToGate(input, gate));
+        });
+        gates.forEach(gate -> {
+            gate.connections.forEach(conn -> {
+                if(conn instanceof Gate){
+                    drawConnGateToGate(gate, (Gate)conn);
+                }
+                else if(conn instanceof Output){
+                    drawConnectionToOutput(gate, (Output)conn);
+                }
+            });
+        });
     }
     Circuit addOutput(int row){
         assert row <= this.row && row > 0;
@@ -330,6 +417,7 @@ class Circuit{
     }
     //Methode um Gatter hinzuzufügen
     Circuit addComponent(Gate gate){
+        if(fieldCheck.get((int)gate.gatePosition.getY()-1).get((int)gate.gatePosition.getX()-1)) throw new IllegalArgumentException("It is not possible to place a Gate on a wire");
         if(gate.gatePosition.getX() == 1 || gate.gatePosition.getX() == col) throw new IllegalArgumentException("Its not possible to place a Gate on this position");
         if(gates.stream().anyMatch(gates -> gates.gatePosition.equals(gate.gatePosition))) throw new IllegalArgumentException("Their is already a Gate on this position");
         else {
@@ -338,32 +426,33 @@ class Circuit{
         }
         return this;
     }
-    //Input mit einem Gatter verbinden
-    void connectInGate(int row, String gatename){
-        assert row <= this.row;
-        Input input = inputs.stream().filter(input1 -> input1.row == row).findFirst().orElseThrow(() -> new IllegalArgumentException("Their is no Input in this row"));
-        Gate gate = gates.stream().filter(gate1 -> gate1.name.equals(gatename)).findFirst().orElseThrow(() -> new IllegalArgumentException("Their is no Gate with this name"));
-        input.connectionsToGates.add(gate);
-        gate.addGateInput(input);
-        drawConnInToGate(input, gate);
-    }
-    //Methode um zwei Gatter mit einer Leitung zu verbinden
-    void connectGates(String start, String end){
-        Gate startGate = gates.stream().filter(gate -> gate.name.equals(start)).findFirst().orElseThrow(() -> new IllegalArgumentException("Their is no Gate with this name: " + start));
-        
-        Gate endGate = gates.stream()
-            .filter(gate -> gate.name.equals(end))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Their is no gate with this name: " + end));
 
-        if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of the gate are already occupied");
-        endGate.inputs.add(startGate.output);
-        startGate.connections.add(endGate);
-        drawConnGateToGate(startGate, endGate);
-    }
     //Input darf nur als start verwendet werden
     //Output darf nur als end verwendet werden
-    
+    void connectGates(Gate startGate, Gate endGate){
+        if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && 
+            endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of this gate are already occupied");
+                    
+            endGate.inputs.add(startGate.output);
+            startGate.connections.add(endGate);
+            drawConnGateToGate(startGate, endGate);
+    }
+    void connectGateToOut(Gate startGate, Output output){
+        if(!output.hasConnection){
+            output.setConnection(startGate.output);
+            startGate.connections.add(output);
+            drawConnectionToOutput(startGate, output);
+        }
+        else throw new IllegalArgumentException("The output is already occupied");
+    }
+    void connectInToGate(Input input, Gate endGate){
+        if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && 
+            endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of this gate are already occupied");
+
+            endGate.inputs.add(input.value);
+            input.connectionsToGates.add(endGate);
+            drawConnInToGate(input, endGate);
+    }
     void connect(String start, String end){
         if(start.equals(end)) throw new IllegalArgumentException("It is not allowed to connect a Component with itself");
         Object startComponent = findStartComponent(start);
@@ -372,27 +461,16 @@ class Circuit{
         switch (startComponent) {
             case Gate startGate : 
                 if(endComponent instanceof Gate endGate){
-                    if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && 
-                    endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of this gate are already occupied");
-                    
-                    endGate.inputs.add(startGate.output);
-                    startGate.connections.add(endGate);
-                    drawConnGateToGate(startGate, endGate);
+                    connectGates(startGate, endGate);
                 }
                 else if(endComponent instanceof Output output){
-                    output.setConnection(startGate.output);
-                    startGate.connections.add(output);
+                    connectGateToOut(startGate, output);
                 }
                 else throw new IllegalArgumentException("Wrong Component");
                 break;
             case Input input :
                 if(endComponent instanceof Gate endGate){
-                    if(endGate.inputs.size() == 2 || endGate.type.equals("NOT") && 
-                    endGate.inputs.size() == 1) throw new IllegalArgumentException("The inputs of this gate are already occupied");
-
-                    endGate.inputs.add(input.value);
-                    input.connectionsToGates.add(endGate);
-                    drawConnInToGate(input, endGate);
+                    connectInToGate(input, endGate);
                     break;
                 }
                 else if(endComponent instanceof Output) throw new IllegalArgumentException("It is not allowed to connect an input with an output");
@@ -433,23 +511,69 @@ class Circuit{
         throw new IllegalArgumentException("Their is no component with this name");
     }
     
+    void checkField(double x, double y){
+        for(int i = 0; i < fieldCheck.size(); i++){
+            for(int j = 0; j < fieldCheck.get(i).size(); j++){
+                System.out.println(x + " " + y);
+                if((j + 1) * 100 == x && (i + 1) * 100 == y){
+                    fieldCheck.get(i).set(j, true);
+                }
+            }
+        }
+    }
+    void expandCheckField(int row, int col){
+         
+        if(row == 0){
+            for(int i = 0; i < this.row; i++){
+                for(int j = 0; j < col; j++){
+                    fieldCheck.get(i).add(false);
+                }
+            }
+        }
+        else if(col == 0){
+            for(int i = 0; i < row; i++){
+                ArrayList<Boolean> rows = new ArrayList<>();
+                for(int j = 0; j < this.col; j++){
+                    rows.add(false);
+                }
+                fieldCheck.add(rows);
+            }
+        }
+        else {
+            for(int i = 0; i < this.row; i++){
+                for(int j = 0; j < col; j++){
+                    fieldCheck.get(i).add(false);
+                }
+            }
+            for(int i = 0; i < row; i++){
+                ArrayList<Boolean> rows = new ArrayList<>();
+                for(int j = 0; j < col; j++){
+                    rows.add(false);
+                }
+                fieldCheck.add(rows);
+            }
+        }
+            
+    }
     
     double[] checkIfGateIsNearByX(double x, double y, String start, String end){
         double[] result = new double[2];
+        
         for(Gate gate : gates){
-            if(((gate.gatePosition.getX()*100)-40) - x == 0 && (gate.gatePosition.getY()*100) - y == 0){
+            if(((gate.gatePosition.getX()*100)-43) - x == 0 && (gate.gatePosition.getY()*100) - y == 0){
                 if(gate.name.equals(start) || gate.name.equals(end)){
                     result[0] = x;
                     result[1] = y;
                     return result;
                 }
                 else {
+                    int offset = findYOffset(start);
                     turtle.right(90)
-                    .forward(30)
+                    .forward(30 + offset)
                     .left(90)
                     .forward(70);
                     result[0] = x + 70;
-                    result[1] = y + 30;
+                    result[1] = y + 30 + offset;
                     return result;
                 }
             }
@@ -484,19 +608,22 @@ class Circuit{
         return result;
     }
     
-    void drawConnectionToOutput(){
-
+    void drawConnectionToOutput(Gate gate, Output output){
+        double startXPos = gate.outputCoordinates[0].getX(), startYPos = gate.outputCoordinates[0].getY();
+        double outputXPos = output.col*100, outputYPos = output.row*100;
+        drawConnections(startXPos, startYPos, outputXPos, outputYPos, gate.name, output.name);
     }
     void drawConnections(double xStart, double yStart, double xEnd, double yEnd, String start, String end){
-        
+        int offset = findOffset(end);
         turtle.moveTo(xStart, yStart);
-        while(xStart != xEnd-dynamicOffset){
-            System.out.println(xStart + " " + yStart);
+        while(xStart != xEnd-offset){
+            
             double[] result = checkIfGateIsNearByX(xStart, yStart, start, end);
             xStart = result[0];
             yStart = result[1];
             turtle.penDown().forward(1);
             xStart++;
+            checkField(xStart, yStart);
         }
         if(yStart < yEnd){
             turtle.right(90);
@@ -504,7 +631,7 @@ class Circuit{
                 turtle.penDown().forward(1);
                 yStart++;
             }
-            turtle.left(90).forward(dynamicOffset);
+            turtle.left(90).forward(offset);
         }
         else{
             turtle.left(90);
@@ -512,15 +639,16 @@ class Circuit{
                 turtle.penDown().forward(1);
                 yStart--;
             }
-            turtle.right(90).forward(dynamicOffset);
+            turtle.right(90).forward(offset);
         }
-        dynamicOffset += 5;
+        
     }
     void drawConnGateToGate(Gate startGate, Gate endGate){
         double startXPos = startGate.outputCoordinates[0].getX(), startYPos = startGate.outputCoordinates[0].getY();
         int inputsSize = endGate.inputs.size();
         double endXPos, endYPos;
         System.out.println(inputsSize);
+        
         endXPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getX() : endGate.inputCoordinates.get(1).getX(); 
         endYPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getY() : endGate.inputCoordinates.get(1).getY(); 
         drawConnections(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name);
@@ -661,9 +789,7 @@ class Circuit{
         turtle.moveTo(x-25, y-25);
         drawSquareSquare(50);
         drawInput(x, y);
-        turtle.moveTo(x, y).penUp().forward(31).left(90).forward(5).right(90);
-        drawCircle();
-        turtle.moveTo(x, y).penUp().forward(35).penDown().forward(6).backward(6);
+        drawOutput(x, y);
         turtle.moveTo(x, y).left(90).penUp().forward(10).left(90).forward(9).right(90).text("=1", Font.ARIAL, 15, null).right(90);
         gate.getCoordInOut(x, y, gate);
         drawGateName(x, y, gate);
@@ -741,8 +867,11 @@ class Input{
         return value;
     }
 }
-
-class Output{
+interface Outputs {
+    boolean setConnection(int value);
+    void setValue(int value);
+}
+class Output implements Outputs{
     boolean hasConnection = false;
     String name;
     int col, row, value;
@@ -753,15 +882,15 @@ class Output{
         this.name = "A" + row;
     }
 
-    boolean setConnection(int value){
+    public boolean setConnection(int value){
         if(!hasConnection){
             this.value = value;
-            return true;
+            return hasConnection = true;
         }
-        return false;
+        return hasConnection = false;
     }
 
-    void setValue(int value){
+    public void setValue(int value){
         this.value = value;
     }
     
