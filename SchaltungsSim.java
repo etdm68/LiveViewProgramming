@@ -137,9 +137,9 @@ class Circuit{
     Turtle turtle;
     int row;
     int col;
-    int dynamicOffset = 5;
-    private ArrayList<Integer> offsets = new ArrayList<>();
-    private ArrayList<Integer> yOffsets = new ArrayList<>();
+    ArrayList<Integer> offsets = new ArrayList<>();
+    ArrayList<Integer> yOffsets = new ArrayList<>();
+    ArrayList<Wire> connections = new ArrayList<>();
     //Feld erstellen mit einer Standart Größe
     Circuit(String name){
         this(name, 6, 6);
@@ -299,6 +299,7 @@ class Circuit{
         this.turtle = new Turtle(114*this.col,114*this.row);
         new FieldDraw().drawCircuitField();
         addOffsets(col);
+        addYOffsets(row);
         outputs.forEach(output -> output.col += col);
         drawAllComponents();
         drawAllInputs();
@@ -314,6 +315,27 @@ class Circuit{
         drawInputE(1*100, row*100, input);
         return this;
     }
+
+    void calcAllOutputs(){
+        gates.forEach(gate -> gate.calculateOutput());
+        gates.forEach(gate -> gate.connections.forEach(connec -> {
+            if(connec instanceof Gate){
+                Gate tempGate = (Gate)connec;
+                tempGate.calculateOutput();
+            }
+            else if(connec instanceof Output){
+                Output tempOutput = (Output)connec;
+                tempOutput.setValue(gate.output);
+            }
+        }));
+        Clerk.clear();
+        this.turtle = new Turtle(114*this.col,114*this.row);
+        new FieldDraw().drawCircuitField();
+        drawAllComponents();
+        drawAllInputs();
+        drawAllOutputs();
+        drawAllConnections();
+    }
     //Methode um die Werte der Inputs zu ändern
     void setInput(int row, HiLo hilo){
         assert row <= this.row && row > 0;
@@ -324,6 +346,8 @@ class Circuit{
         new FieldDraw().drawCircuitField();
         drawAllInputs();
         drawAllComponents();
+        drawAllOutputs();
+        drawAllConnections();
     }
     int findYOffset(String name){
         if(gates.stream().anyMatch(gate -> gate.name.equals(name))){
@@ -348,6 +372,25 @@ class Circuit{
         }
     }
     int findOffset(String name){
+        System.out.println(name);
+        Optional<Gate> tempGate = gates.stream().filter(gate -> gate.name.equals(name)).findFirst();
+        System.out.println(tempGate);
+        if(tempGate.isPresent()){
+            Gate gate1 = tempGate.get();
+            System.out.println(gate1.gatePosition.getX()-1);
+            int offset = offsets.get((int)gate1.gatePosition.getX()-1);
+            syncOffsets((int)gate1.gatePosition.getX());
+            System.out.println(offset);
+            return offset;
+        }
+        Optional<Output> tempOutput = outputs.stream().filter(output -> output.name.equals(name)).findFirst();
+        if(tempOutput.isPresent()){
+            Output output = tempOutput.get();
+            int offset = offsets.get((int)output.col-1);
+            syncOffsets(output.col);
+            return offset;
+        }
+        /* 
         if(gates.stream().anyMatch(gate -> gate.name.equals(name))){
             Optional<Gate> tempGate = gates.stream()
                             .filter(gate -> gate.name.equals(name))
@@ -370,6 +413,7 @@ class Circuit{
                 return offset;
             }
         }
+            */
         return 5;
     }
     void syncOffsets(int index){
@@ -391,20 +435,10 @@ class Circuit{
         outputs.forEach(output -> drawOutputA(col*100, output.row*100, output));
     }
     void drawAllConnections(){
-        offsets.forEach(offset -> offset = 5);
-        yOffsets.forEach(yoffset -> yoffset = 5);
-        inputs.forEach(input -> {
-            input.connectionsToGates.forEach(gate -> drawConnInToGate(input, gate));
-        });
-        gates.forEach(gate -> {
-            gate.connections.forEach(conn -> {
-                if(conn instanceof Gate){
-                    drawConnGateToGate(gate, (Gate)conn);
-                }
-                else if(conn instanceof Output){
-                    drawConnectionToOutput(gate, (Output)conn);
-                }
-            });
+        offsets.replaceAll(offset -> offset = 5);
+        yOffsets.replaceAll(offset -> offset = 5);
+        connections.forEach(connect -> {
+            drawConnections(connect.sourceX, connect.sourceY, connect.endX, connect.endY, connect.startName, connect.endName);
         });
     }
     Circuit addOutput(int row){
@@ -514,7 +548,7 @@ class Circuit{
     void checkField(double x, double y){
         for(int i = 0; i < fieldCheck.size(); i++){
             for(int j = 0; j < fieldCheck.get(i).size(); j++){
-                System.out.println(x + " " + y);
+                
                 if((j + 1) * 100 == x && (i + 1) * 100 == y){
                     fieldCheck.get(i).set(j, true);
                 }
@@ -611,6 +645,7 @@ class Circuit{
     void drawConnectionToOutput(Gate gate, Output output){
         double startXPos = gate.outputCoordinates[0].getX(), startYPos = gate.outputCoordinates[0].getY();
         double outputXPos = output.col*100, outputYPos = output.row*100;
+        connections.add(new Wire(startXPos, startYPos, outputXPos, outputYPos, gate.name, output.name));
         drawConnections(startXPos, startYPos, outputXPos, outputYPos, gate.name, output.name);
     }
     void drawConnections(double xStart, double yStart, double xEnd, double yEnd, String start, String end){
@@ -647,11 +682,13 @@ class Circuit{
         double startXPos = startGate.outputCoordinates[0].getX(), startYPos = startGate.outputCoordinates[0].getY();
         int inputsSize = endGate.inputs.size();
         double endXPos, endYPos;
-        System.out.println(inputsSize);
         
-        endXPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getX() : endGate.inputCoordinates.get(1).getX(); 
-        endYPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getY() : endGate.inputCoordinates.get(1).getY(); 
-        drawConnections(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name);
+            endXPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getX() : endGate.inputCoordinates.get(1).getX(); 
+            endYPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getY() : endGate.inputCoordinates.get(1).getY();
+            connections.add(new Wire(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name)); 
+            drawConnections(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name);
+        
+        
     }
 
 
@@ -662,6 +699,7 @@ class Circuit{
         gateXPos = inputsSize == 1? gate.inputCoordinates.get(0).getX() : gate.inputCoordinates.get(1).getX();
         gateYPos = inputsSize == 1? gate.inputCoordinates.get(0).getY() : gate.inputCoordinates.get(1).getY();
         turtle.moveTo(startXPos, startYPos);
+        connections.add(new Wire(startXPos, startYPos, gateXPos, gateYPos, input.name, gate.name));
         drawConnections(startXPos, startYPos, gateXPos, gateYPos, input.name, gate.name);
     }
 
@@ -897,16 +935,20 @@ class Output implements Outputs{
 }
 
 class Wire{
-    String start;
-    String end;
-    Wire(String start, String end){
-        this.start = start;
-        this.end = end;
+    double sourceX, sourceY, endX, endY;
+    String startName = "", endName = "";
+    Wire(double sourceX, double sourceY, double endX, double endY, String startName, String endName){
+        this.sourceX = sourceX;
+        this.sourceY = sourceY;
+        this.endX = endX;
+        this.endY = endY;
+        this.startName = startName;
+        this.endName = endName;
     }
     
 }
 
-
+//startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name
 
 /*
  * Bermerkungen für mich um später den Code nochmal anzupassen:
