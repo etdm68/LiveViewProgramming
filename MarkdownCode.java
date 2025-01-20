@@ -18,6 +18,443 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+
+Clerk.markdown("""
+# Projekt Digitaler Schaltungssimulator für Gatter 
+_by Erik Thorleif Damm_ 
+        """);
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## 1. Szenario Grundlegende Gatter:
+Als erstes muss der Benutzer eine Feld mit der Klasse Circuit erstellen wo drauf dann die spätere Schaltung dargestellt wird. Dafür kann der Benutzer aus drei Konstruktoren auswählen.
+### Verschiedene Konstruktoren
+1. Einfach nur einen String übergeben um ein Feld mit der Standardgröße(6x6) zu erhalten
+2. String und größe des Feldes angeben
+3. String und Dateiname, um eine gespeicherte Schaltung laden zu können. Wodrauf ich in der späteren Protokollierung nochmal genauer drauf eingehen werde.
+
+Um ein Feld später auch noch zu vergrößern, gibt es die Methode `expandField()`
+
+Jetzt im ersten Szenario schickt es einfach nur einen Namen anzugeben und ein Feld mit der Standardgröße zu erhalten:
+
+`Circuit c = new Circuit(“C”);`
+
+Das zeichnen des Feldes habe ich mit einer verschachtelten Klasse(FieldDraw) realisiert, da ich mir dachte das es wenig Sinn machen ein Feld zu erstellen ohne eine Schaltung zu besitzen
+
+```java
+${0}
+```
+""", Text.cutOut("./MarkdownCode.java", "//Circuit")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Gatter Klasse
+
+Um nun Gatter auf dem Feld platzieren zu können, braucht man eine Gatter Klasse(Gate), die Gate-Klasse implementiert die wichtigsten Dinge, die ein Gatter besitzen muss. 
+Die Koordinate wo sich das Gatter befindet, um was für ein Gatter es sich handelt, die Logik hinter einem Gatter und Inputs und Outputs. Um zu differenzieren, um was für 
+einen Gatter Typen es sich handelt, habe ich das Enum Types erstellt mit alle verfügbaren Typen in meinem Code. 
+
+Der Benutzer gibt bei der Erstellung die Reihe, die Spalte und den Typen des Gatters an.
+
+Jedes Gatter bekommt einen Namen, der sich aus dem Typen des Gatter herleitet und an der Anzahl der Gatter, die es von diesem Typen gibt. Dieser Name wird dann auch innerhalb des Gatters
+auf der Schaltung dargestellt.
+
+`Gate gate1  = new Gate(Types.NOR,2,2);`
+
+```java
+${0}
+```
+        
+""", Text.cutOut("./MarkdownCode.java", "//Gate")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## addComponent:
+
+Um nun ein Gatter zu platzieren, ruft man die Methode àddComponent auf, übergibt dieser Methode ein Gatter und das Gatter wird auf dem Feld platziert und visuell durch eine Zeichnung angezeigt.
+
+Es muss beachtet werden das dort wo man das Gatter platzieren möchte nicht schon ein Gatter isst sonst wird eine Exception geworfen.
+
+Es musste auch geprüft werden, dass ein Gatter nicht in die erste oder letzte Spalte platziert werden darf, da die erste Spalte für die Inputs und die letzte Spalte für die Outputs reserviert sind.
+
+`c.addComponent(new Gate(Types.NOR,2,2))`
+
+Da die Methode mit return this das Objekt selber zurückgibt ist folgendes möglich:
+
+`c.addComponent(new Gate(Types.NAND,2,3)).addComponent(new Gate(Types.OR,3,3));`
+
+In der Methode werden noch andere Methoden aufgerufen, die es ermöglichen, die Gatter zu zeichnen. Das Gatter wird in einer ArrayList abgespeichert. 
+
+```java
+${0}
+```
+
+
+""", Text.cutOut("./MarkdownCode.java", "//addComponent")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Input Klasse und addInput()
+
+Die Input Klasse ist dafür da, die Eingänge der Schaltung zu darzustellen. Diese Eingänge g werden in immer in der ersten Spalte platziert und sind der Anfang 
+der Schaltung. Bei ihnen fängt alles an.
+
+Mit der Methode `addInput()` kann man einen Input hinzufügen. Man übergibt der Methode die Reihe wohin der Input platziert werden will und dann noch einen Enum 
+den ich erstellt habe um HIGH und LOW darzustellen(HiLo). Das Objekt der Klasse Input wird dann innerhalb der Methode erstellt und ebenfalls in einer ArrayList abgespeichert.
+
+Man speichert die ganzen Dinge wie Inputs, Gate usw. ab da man sie später alle wieder neu zeichnen muss und so direkt auf sie zugreifen kann.
+
+Auch hier ist es wieder möglich folgendes zu schreiben:
+
+`c.addInput(2,HiLo.LOW).addInput(3,HiLo.HIGH);`
+
+Man muss aufpassen, dass man nicht versucht zwei Inputs in einer Zelle zu platzieren, da sonst eine Exception geworfen wird.
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//Input")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Output Klasse und addOutput:
+
+Die Output Klasse wird dafür verwendet, um das Ergebnis die Ausgänge der Schaltung visuell darzustellen. Die Outputs können nur in die letzte Spalte des Feldes platziert werden. 
+Es muss berücksichtigt werden, dass jeder Output höchstens einem Gatter Output zugeordnet werden kann. 
+
+Dafür gibt es die Variable hasConnection um so zu prüfen ob der Output schon eine Verbindung besitzt. 
+
+Mit der Methode `addOutput()` ist es möglich einen Output hinzuzufügen. Man muss der Methode nur übergeben in welche Zeile man den Output platzieren möchte.
+
+Die Outputs haben standardmäßig eine 0 als Wert.
+
+auch hier ist folgendes wieder möglich:
+
+`c.addOutput(2).addOutput(3);`
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//Output")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Wire:
+
+Die Klasse Wire ist einzig und alleine dafür da, um die Verbindungen zwischen den einzelnen Komponenten zu verwalten und abspeichern.
+
+In der Klasse werden die wichtigsten Dinge abgespeichert, die man später benötigt, um alle Verbindungen neu zu zeichnen. 
+
+Den zB. bei der expandField() muss das Feld nachdem vergrößern komplett neu gezeichnet werden und natürlich auch die Komponenten mit ihren Verbindungen, oder wenn 
+man den Input einer Schaltung ändern muss man alles neu zeichnen da sich zB der Output verändert.
+
+In der Circuit Klasse gibt es eine HashSet welche Objekte des Typs Wire annimmt. Ein Set kam dort gelegen, da es jede Verbindung nur einmal geben kann.
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//Wire")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## connect():
+
+Die Methode connect ist dafür da die Komponenten miteinander zu verbinden. 
+Ich habe dafür das Pattern Matching in dieser Methode verwendet. Man übergibt der Methode zwei Strings den Namen der Start Komponente und den Namen der End Komponente. 
+
+Zuallererst wird geprüft ob es zweimal der gleiche Name ist. Wenn das der Fall ist wird eine Exception geworfen da es nicht erlaubt ist eine Komponente mit sich selber zu verbinden. 
+Danach sucht man mit den beiden Methoden einmal die Start Komponente und die End Komponente. Wenn sich vorhanden ist wird mit einer switch-case herausgefunden von welcher Klasse das Objekt ist.
+
+Wenn es sich um ein Objekt handelt, welches nicht von mir definiert wurde, wird eine Exception geworfen. Es wird auch eine Exception geworfen, wenn es keine Komponente mit dem übergebenen Namen gibt
+
+Wenn es dann erlaubt ist die beiden Komponenten zu verbinden werden die jeweiligen Methoden aufgerufen um das zeichnen der Verbindungen zu realisieren und das abspeichern der connections in der Set.
+
+Auf das zeichnen werde ich gleich nochmal im detail drauf eingehen da dies wohl mit einer der schwersten Sachen war zu realisieren. 
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//connect")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## drawConnections und checkIfGateIsNearBy
+
+Das Zeichnen der Verbindungen war mit einer der schwierigsten Dinge in meinem Code, da man so viele Dinge beachten musste. 
+
+Man musste beachten, dass die Verbindungen zum richtigen Gatter oder Output gezeichnet werden.
+
+Es musste geschaut werden das wenn sich ein Gatter zwischen Start und Ziel befindet die 
+Verbindung um das Gatter herum gezeichnet wird.
+
+Es musste so gezeichnet werden, dass Verbindungen die nicht zueinander gehören, sich nicht überlappen.
+
+### drawConnections
+
+In der drawConnections wird die Verbindung gezeichnet. Als erstes wird ein offset ermittelt mit der `findOffset()`, der dazu dient das sich die Verbindungen nicht überlappen beim Zeichnen. Dieser offset ist von Spalte zu Spalte 
+individuell und wurde vorher in einer Map gespeichert und wird nach dem Zeichnen einer Verbindung verändert.
+
+Die Farbe der Verbindung wird dann ermittelt, bei einem HIGH wird die Verbindung grün, bei einem LOW bleibt sie schwarz.
+
+Das Zeichnen wurde so realisiert, dass zuerst  so lange gezeichnet wird in einer  While-Schleife, bis der Start x-Wert gleich dem End x-Wert ist. Nach jedem Schleifendurchgang wird die Methode 
+`checkIfGateIsNearBy()` aufgerufen, welche prüft ob sich ein Gate in der Nähe befindet, falls dies der Fall ist, wird  um das Gate herum gezeichnet. In der `checkIfGateIsNearBy()` wird auch nochmal ein 
+anderer offset herausgefunden welcher von Reihe zu Reihe unterschiedlich ist, um keine Überlappung beim Drumherum zeichnen zu haben.
+
+Ist der x Wert erreicht, wird eine While Schleife durchlaufen bis der y Wert erreicht wird.
+
+Wenn eine Verbindung durch eine Zelle gezeichnet wurde, so das beim Adden eines neues Gatters die Leitung durch das Gatter verlaufen würde, würde diese Zelle für das Hinzufügen 
+eines neuen Gatters gesperrt werden. Somit verhindert man mögliche Fehler.
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//drawConnection")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+```java
+${0}
+```    
+""", Text.cutOut("./MarkdownCode.java", "//checkIfGateIsNearBy")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Outputs der Schaltung berechnen
+
+Wenn man die Outputs der gesamten Schaltung berechnen will muss man die Methode calcAllOutputs() aufrufen oder die setInputs(). 
+
+Die `calcAllOutputs()` habe ich mit einer Queue realisiert, die wie folgt funktioniert. Es wird so lange eine While Schleife durchlaufen, bis die Queue leer ist. 
+Man holt sich erst eine Komponente heraus und aktualisiert die Inputs und berechnet von diesem Gatter den Output. Hat sich der Output geändert, werden alle Verbindungen 
+von diesem Gatter in die Queue hinzugefügt, da diese alle nochmal geprüft werden müssen ob sich bei diesen Gattern auch der Output geändert hat. 
+
+Handelt es sich bei einer der Verbindungen um einen Output, wird dieser auf den neuen Output gesetzt. 
+
+Am Ende wird dann noch alles neu gezeichnet.
+
+Wenn man einfach nur so mit einer forEach Schleife alle Outputs berechnen würde, könnte es zu fehlern kommen da vielleicht ein Gatter nicht auf dem neusten Stand ist.
+
+In der `calcAllOutputs()` wird auch die Objektmethode der Klasse Gate aufgerufen, calculatOutput(). Diese Methode implementiert die Logik aller Gatter in der Schaltung.
+Die updateInputs() auch eine Methode der Gate macht genau das wie sie auch heißt, die Input aktualisieren.
+
+Man sollte aber aufpassen, dass man vor dem Verwenden der Methoden alle Inputs der Gatter eine Verbindung haben da sonst eine Exception geworfen wird.
+
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//calcAllOutputs")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+```java
+${0}
+```   
+### Ausgabe
+Um die unten zu sehende Augabe zu erhalten, musste folgendes gemacht werden:
+
+`Gate gate1 = new Gate(Types.AND,2,2);`
+
+`Circuit a = new Circuit("C");`
+
+`a.addComponent(gate1).addInput(1,HiLo.HIGH).addInput(3,HiLo.LOW).addOutput(2);`
+
+`a.connect("E1",gate1.name).connect("E3",gate1.name).connect(gate1.name, "A2");`
+
+Mit der Methode `setInput()` kann man nun die Inputs ändern um so eine andere ausgabe zu erhalten. Oder man benutzt `calcAllOutputs()` um die Outputs zu berechnen.
+
+""", Text.cutOut("./MarkdownCode.java", "//calculateOutput")));
+Gate gate1 = new Gate(Types.AND,2,2);
+Circuit a = new Circuit("C");
+a.addComponent(gate1).addInput(1,HiLo.HIGH).addInput(3,HiLo.LOW).addOutput(2);
+a.connect("E1",gate1.name).connect("E3",gate1.name).connect(gate1.name, "A2");
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## 2. Szenario 
+### Einfacher Schaltungsaufbau
+
+In diesem Szenario sollte gezeigt werden, dass es auch möglich ist, mehrere Gatter zu platzieren und zu verbinden und das richtige Ergebnis erhält.
+
+Die Schwierigkeit hier war es immer den richtigen Koordinaten der Gatter zu erhalten und auch der richtige Input bei dem Endgatter ausgewählt wird.
+
+Man musste auch mögliche Fehler ausschließen, dass es z.B. nicht möglich sein darf, dass wenn beide Inputs eines Gatters schon eine Verbindung besitzen, nicht noch eine dritte Verbindung zu diesem Gatter hergestellt werden darf. 
+Wenn der Benutzer versucht dies zu machen, kommt eine Fehlermeldung.
+
+Man musste aber auch prüfen, dass am Ende die Inputs von jedem Gatter eine Verbindung besitzen müssen, bevor man das Ergebnis der Schaltung berechnet. Dies wurde so gelöst dass immer 
+alle Inputs eine Verbindung benötigen und wenn dies nicht der Fall ist wird eine Exception geworfen, die dem Benutzer sagt was er falsch gemacht hat.
+   
+Um die unten in der Turtle zu sehende Ausgabe zu erhalten, musste folgendes eingegeben werden:
+
+`Gate gate2 =  new Gate(Types.AND,2,2);`
+
+`Gate gate3 = new Gate(Types.AND,4,2);`
+
+`Gate gate4 = new Gate(Types.XOR,3,3);`
+
+`Circuit b = new Circuit("B");`
+
+`b.addComponent(gate2).addComponent(gate3).addComponent(gate4).addInput(1,HiLo.LOW).addInput(2,HiLo.HIGH).addInput(3,HiLo.HIGH).addInput(4,HiLo.HIGH).addOutput(3);`
+
+`b.connect("E1",gate2.name).connect("E2",gate2.name).connect("E3",gate3.name).connect("E4",gate3.name).connect(gate2.name,gate4.name).connect(gate3.name,gate4.name).connect(gate4.name,"A3");`
+
+`b.calcAllOutputs();`
+"""));
+Gate gate2 =  new Gate(Types.AND,2,2);
+Gate gate3 = new Gate(Types.AND,4,2);
+Gate gate4 = new Gate(Types.XOR,3,3);
+Circuit b = new Circuit("B");
+b.addComponent(gate2).addComponent(gate3).addComponent(gate4).addInput(1,HiLo.LOW).addInput(2,HiLo.HIGH).addInput(3,HiLo.HIGH).addInput(4,HiLo.HIGH).addOutput(3);
+b.connect("E1",gate2.name).connect("E2",gate2.name).connect("E3",gate3.name).connect("E4",gate3.name).connect(gate2.name,gate4.name).connect(gate3.name,gate4.name).connect(gate4.name,"A3");
+b.calcAllOutputs();
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## 3. Szenario
+### Volladdierer
+
+In diesem Szenario kann der Benutzer mit der vom Proramm mitgegebenen Methode fullAdder() einen Volladdierer in der Schaltung darstellen um zu sehen wie dieser Aussieht und funktioniert.
+
+### Erklärung eines Volladdierers:
+
+Ein Volladdierer besteht aus drei Inputs, zwei Outputs(Sum und Cout) und 5 Gattern.
+Mit einem Volladdierer kann man drei einstellige Binärzahlen addieren und bekommt bei dem Output einmal das Ergebnis dieser Rechnung und den Übertrag.
+
+Man muss in diesem Programm einfach ein leeres Feld erstellen und die Methode fullAdder() aufrufen und die Schaltung wird visuell Dargestellt und kann verwendet werden wenn man noch Dinge dazu machen will ist dies möglich.
+  
+```java
+${0}
+``` 
+
+### Wie erhält man die untere Ausgabe:
+
+`Circuit c = new Circuit("C").fullAdder();`
+
+""", Text.cutOut("./MarkdownCode.java", "//fullAdder")));
+
+Circuit c = new Circuit("C").fullAdder();
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Szenario 4
+### Fehlerkontrolle
+
+Dieses Szenario soll zeigen, was passiert wenn ein Benutzer eine falsche Schaltung baut und sie ausführen möchte. 
+Ich bin ja in den anderen Szenarien schon einmal auf möglich Fehler eingegangen und wie man sie verhindern kann, aber in diesem Teil werde ich noch einmal genauer darauf eingehen.
+
+Einer der Fehler könnte sein das der Benutzer es vergessen hat, nicht alle Inputs eines Gatters zu belegen und die Schaltung ausführen möchte. 
+Da dies zu einem Fehler führen würde, da die Outputs nicht richtig berechnet werden, verhindert das Programm die Ausführung und sagt dem Benutzer in der Konsole was er falsch gemacht hat.
+
+```java
+${0}
+```
+
+Man musste dort unterscheiden, da manche Gatter zwei Eingänge besitzen und ein NOT Gatter z.B. nur einen das man trotzdem eine richtige Fehleranalyse durchführt.
+
+""", Text.cutOut("./MarkdownCode.java","//Fehlerkontrolle1")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+Ein anderer Fehler könnte sein, dass der Benutzer versucht ein Gatter, Input oder Output dort zu platzieren, wo sich schon eine andere Komponente befindet. 
+Wenn dies versucht wird kommt eine Fehlermeldung in der Konsole mit dem verweis darauf was falsch gemacht wurde.  
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java", "//Fehlerkontrolle2")));
+Gate gate5 = new Gate(Types.AND,2,2);
+Gate gate6 = new Gate(Types.AND,4,2);
+Gate gate7 = new Gate(Types.AND,3,3);
+Circuit d = new Circuit("D").addComponent(gate5).addComponent(gate6).addComponent(gate7);
+d.addInput(1,HiLo.HIGH).addInput(2,HiLo.LOW).addInput(3,HiLo.LOW).addOutput(3);
+d.connect("E1",gate5.name).connect("E2",gate5.name).connect("E3",gate6.name).connect(gate5.name,gate7.name).connect(gate6.name,gate7.name).connect(gate7.name,"A3");
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+Wenn man jetzt versucht bei dem Beispiel oben die Methode `setInput()` oder `calcAllOutputs()` versucht kommt eine Fehlermeldung.        
+"""));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Szenario 5
+### Speichern und Laden einer Schaltung
+
+In meinem letzten Szenario soll es dem Benutzer möglich sein, die Schaltung welche er erstellt hat abspeichern zu können und wieder neu laden zu können.
+
+Dafür habe ich der Circuit Klasse einen dritten Konstruktor gegeben um dort eine gespeicherte Klasse laden zu können dazu genau aber später.
+
+### saveCircuit
+
+Die Methode speichert das Circuit Objekt in einer Datei ab und funktioniert wie folgt.
+
+`ObjectOutputStream` wird verwendet um das Objekt der Circuit Klasse in den angegebenen Dateipfad zu schreiben.
+
+Wichtig ist auch, dass man bei wichtigen Klassen wie z.B. Gate, Wire, Input, Output und Circuit das Serializable Interface verwendet, da dieses 
+Interface ermöglicht, Objekte in Dateien zu schreiben und sie später wieder auslesen zu können.
+
+Mit `writeObject()` wird das Circuit Objekt gespeichert.
+
+### loadCircuit
+
+Die Methode benötigt man um das Objekt aus der Datei wieder auszulesen.
+
+`ObjectInputStream()` liest das Objekt aus der Datein heraus.
+
+`readObject()` erstellt wieder das ursprüngliche Circuit Objekt her.
+
+```java
+${0}
+```
+
+### Wie speichert und lädt man:
+
+Um eine Schaltung zu speichern muss man einfach nur die Methode `saveCircuit()` aufrufen.
+
+Um eine Schaltung zu laden, muss man einfach nur den Konstruktor zu laden aufrufen und den richtigen Dateinamen angeben. 
+
+""", Text.cutOut("./MarkdownCode.java", "//Speichern und laden")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+### Konstruktor fürs Laden
+
+Im neu angelegten Konstruktor der Klasse Circuit der extra nur fürs laden von Schaltungen da ist wird das Circuit Objekt mit der `loadCircuit()` Methode 
+wird aus einer Datei das Objekt wieder zu einem Objekt umgewandelt.
+
+Danach übergibt man dem neuen Objekt alle wichtigen Werte aus dem gespeichertem Objekt und zeichnet alles neu.
+
+Wenn ein falscher Dateiname angegeben wurde wird dies in der Konsole angezeigt.
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java","//Laden Konstruktor")));
+
 enum Types{
     OR,AND,NOR,NAND,XOR,NOT
 }
@@ -43,6 +480,7 @@ class Gate implements Serializable{
     String name = "";
     static int orCount, andCount,xorCount,norCount,nandCount,notCount;
     Point gatePosition;
+    //Gate
     Gate(Types type, int row,int col){
         switch (type) {
             case Types.OR:
@@ -77,11 +515,12 @@ class Gate implements Serializable{
                 break;
             default:
                 throw new IllegalArgumentException("Wrong type. Only (OR,AND,NAND,NOR,XOR,NOT) are available");
-        }    
+        }
+        
         this.gatePosition = new Point(col,row);
         
     }
-
+    //Gate
     void addGateInput(Input input){
         if(this.type.equals("NOT") && inputs.size() >= 1) throw new IllegalArgumentException("Ein NOT-Gatter hat nur einen Input");
         if(inputs.size() >= 2) throw new IllegalArgumentException("Jedes Gatter darf nur zwei inputs besitzen");
@@ -93,10 +532,28 @@ class Gate implements Serializable{
         if(inputs.size() == 0) throw new IllegalArgumentException("Es muss mindestens ein Input vorhanden sein um diesen zu ändern");
         inputs.set(index, ~inputs.get(index));
     }
-
-    void calculateOutput(){
+    void getCoordInOut(double x, double y, Gate gate){
         
+        if(gate.type.equals("NOT")){
+            Point input1 = new Point((int)x-30,(int)y);
+            Point output = new Point((int)x+35,(int)y);
+            gate.inputCoordinates.add(input1);
+            gate.outputCoordinates[0] = output;
+        }else{
+            Point input1 = new Point((int)x-30,(int)y-10);
+            Point input2 = new Point((int)x-30,(int)y+10);
+            Point output = new Point((int)x+35,(int)y);
+            gate.inputCoordinates.add(input1);
+            gate.inputCoordinates.add(input2);
+            gate.outputCoordinates[0] = output;
+        }
+        
+    }
+    //calculateOutput
+    void calculateOutput(){
+        //Fehlerkontrolle1
         if(inputs.size() == 2 || this.type.equals("NOT")&& inputs.size() == 1){
+        //Fehlerkontrolle1
             switch (type) {
                 case "OR":
                     output = inputs.get(0) | inputs.get(1);
@@ -121,23 +578,6 @@ class Gate implements Serializable{
         else throw new IllegalArgumentException("Not all inputs are occupid");
     }
 
-    void getCoordInOut(double x, double y, Gate gate){
-        
-        if(gate.type.equals("NOT")){
-            Point input1 = new Point((int)x-30,(int)y);
-            Point output = new Point((int)x+35,(int)y);
-            gate.inputCoordinates.add(input1);
-            gate.outputCoordinates[0] = output;
-        }else{
-            Point input1 = new Point((int)x-30,(int)y-10);
-            Point input2 = new Point((int)x-30,(int)y+10);
-            Point output = new Point((int)x+35,(int)y);
-            gate.inputCoordinates.add(input1);
-            gate.inputCoordinates.add(input2);
-            gate.outputCoordinates[0] = output;
-        }
-        
-    }
     void updateInputs(){
         inputUpdateInfo.forEach(iUI -> {
             if(iUI.gate != null){
@@ -148,12 +588,7 @@ class Gate implements Serializable{
             }
         });
     }
-
-    @Override
-    public String toString(){
-        String s = " ";
-        return s += name + " postion: " + gatePosition;
-    }
+    //calculateOutput
 }
 
 
@@ -161,16 +596,17 @@ class Gate implements Serializable{
 class Circuit implements Serializable{
     private static final long serialVersionUID = 1L;
     String name;
-    ArrayList<Gate> gates;
-    ArrayList<Input> inputs;
+    private ArrayList<Gate> gates;
+    private ArrayList<Input> inputs;
     private ArrayList<Output> outputs;
     private ArrayList<ArrayList<Boolean>> fieldCheck = new ArrayList<>();
     transient Turtle turtle;
-    private int row,col;
-    Map<Integer,Integer> offsets = new HashMap<>();
-    Map<Integer,Integer> yOffsets = new HashMap<>();
-    private ArrayList<Wire> connections = new ArrayList<>();
-    //Feld erstellen mit einer Standart Größe
+    private int row, col;
+    private Map<Integer,Integer> offsets = new HashMap<>();
+    private Map<Integer,Integer> yOffsets = new HashMap<>();
+    ArrayList<Wire> connections = new ArrayList<>();
+    //Circuit
+    //Feld erstellen mit einer Standard Größe
     Circuit(String name){
         this(name, 6, 6);
     }
@@ -187,7 +623,7 @@ class Circuit implements Serializable{
         turtle = new Turtle(col*114,row*114);
         turtle.lineWidth(3);
         for(int i = 1; i <= col; i++){
-            offsets.put(i,6);
+            offsets.put(i,5);
         }
         for(int i = 1; i <= row; i++){
             yOffsets.put(i,5);
@@ -202,10 +638,8 @@ class Circuit implements Serializable{
         new FieldDraw(this).drawCircuitField();
     }
     //Konstruktor um eine gespeicherte Schaltung zu laden
-    public Circuit(String name,String fileName) {
-        Circuit tempCircuit = new Circuit("Test");
-        Clerk.clear();
-        tempCircuit = null;
+    //Laden Konstruktor
+    Circuit(String name,String fileName) {
         Circuit loadedCircuit = loadCircuit(fileName);
         if (loadedCircuit != null) {
             this.gates = loadedCircuit.gates;
@@ -216,7 +650,6 @@ class Circuit implements Serializable{
             this.outputs = loadedCircuit.outputs;
             this.col = loadedCircuit.col;
             this.row = loadedCircuit.row;
-            this.fieldCheck = loadedCircuit.fieldCheck;
             this.turtle = new Turtle(114 * this.col, 114 * this.row);  
             new FieldDraw(this).drawCircuitField(); 
             drawAllInputs();
@@ -227,25 +660,25 @@ class Circuit implements Serializable{
             System.err.println("Wrong filename: " + fileName);
         }
     }
+    //Laden Konstruktor
+    //Circuit
     private static class FieldDraw{
         private Circuit circuit;
+
         FieldDraw(Circuit circuit){
             this.circuit = circuit;
         }
-
         //Malt das Feld 
         void drawCircuitField(){
-            circuit.turtle.reset()
-                .penDown();
-            int x = 50, y = 50;
-            circuit.turtle.moveTo(x, y)
-                .color(168, 50, 50);
+            circuit.turtle.reset().penDown();
+            int x = 50;
+            int y = 50;
+            circuit.turtle.moveTo(x, y).color(168, 50, 50);
             for(int i = 1; i <= circuit.row; i++){
                 for(int j = 1; j <= circuit.col; j++){
                     circuit.turtle.penDown();
                     drawSquare(100);
-                    circuit.turtle.penUp()
-                        .forward(100);
+                    circuit.turtle.penUp().forward(100);
                 
                 }
                 circuit.turtle.moveTo(x,y+=100);
@@ -294,7 +727,7 @@ class Circuit implements Serializable{
         void drawRight(){
             int x = (circuit.col * 100) + 50, y = 50;
             circuit.turtle.color(61, 3, 252);
-            for(int i = 0; i <=circuit. row; i++){
+            for(int i = 0; i <= circuit.row; i++){
                 circuit.turtle.moveTo(x, y)
                     .penDown()
                     .forward(50)
@@ -343,6 +776,7 @@ class Circuit implements Serializable{
         }
         
     }
+    //Speichern und laden
     void saveCircuit(String fileName) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
             oos.writeObject(this);
@@ -360,6 +794,7 @@ class Circuit implements Serializable{
         }
         return null;
     }
+    //Speichern und laden
     //um ein Feld zu erweitern
     void expandField(int row, int col){
         Clerk.clear();
@@ -393,7 +828,7 @@ class Circuit implements Serializable{
         drawInputE(1*100, row*100, input);
         return this;
     }
-
+    //calcAllOutputs
     void calcAllOutputs(){
         Queue<Gate> con = new LinkedList<>();
         con.addAll(gates);
@@ -419,21 +854,20 @@ class Circuit implements Serializable{
         drawAllInputs();
         drawAllOutputs();
         drawAllConnections();
-
     }
-
+    //calcAllOutputs
     
     //Methode um die Werte der Inputs zu ändern
     //Man kann erst die setInput Methode verwenden wenn ale Inputs der Gatter belegt sind
     //sonst kommt es zu einem Fehler
     void setInput(int row, HiLo hilo){
         assert row <= this.row && row > 0;
-        
         Input in = inputs.stream()
             .filter(input -> input.row == row)
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Their is no Input in this row"));
         in.setValue(hilo);
+        
         new FieldDraw(this).drawCircuitField();
         calcAllOutputs();
         drawAllInputs();
@@ -441,6 +875,7 @@ class Circuit implements Serializable{
         drawAllOutputs();
         drawAllConnections();
     }
+    
     private int findYOffset(String name){
         Optional<Gate> tempGate = gates.stream()
             .filter(gate -> gate.name.equals(name))
@@ -486,6 +921,9 @@ class Circuit implements Serializable{
             int index = (int)gate1.gatePosition.getX();
             int offset = offsets.get(index);
             syncOffsets((int)gate1.gatePosition.getX());
+            //int offset = offsets.get((int)gate1.gatePosition.getX()-1);
+            //syncOffsets((int)gate1.gatePosition.getX());
+            
             return offset;
         }
         Optional<Output> tempOutput = outputs.stream().filter(output -> output.name.equals(name)).findFirst();
@@ -536,18 +974,21 @@ class Circuit implements Serializable{
         return this;
     }
     //Methode um Gatter hinzuzufügen
+    //addComponent
     Circuit addComponent(Gate gate){
         if(fieldCheck.get((int)gate.gatePosition.getY()-1).get((int)gate.gatePosition.getX()-1)) throw new IllegalArgumentException("It is not possible to place a Gate on a wire");
-
         if(gate.gatePosition.getX() == 1 || gate.gatePosition.getX() == col) throw new IllegalArgumentException("Its not possible to place a Gate on this position");
-
+        //Fehlerkontrolle2
         if(gates.stream().anyMatch(gates -> gates.gatePosition.equals(gate.gatePosition))) throw new IllegalArgumentException("Their is already a Gate on this position");
+        //Fehlerkontrolle2
         else {
             gates.add(gate);
             drawGates(gate, gate.gatePosition);
         }
         return this;
     }
+    //addComponent
+    //fullAdder
     Circuit fullAdder(){
         Gate gate1 = new Gate(Types.XOR, 1, 2);
         Gate gate2 = new Gate(Types.AND, 3, 2);
@@ -556,7 +997,8 @@ class Circuit implements Serializable{
         Gate gate5 = new Gate(Types.OR, 4, 5);
         addComponent(gate1)
             .addComponent(gate2)
-            .addComponent(gate3).addComponent(gate4)
+            .addComponent(gate3)
+            .addComponent(gate4)
             .addComponent(gate5);
         addInput(1, HiLo.LOW)
             .addInput(2, HiLo.LOW)
@@ -571,6 +1013,7 @@ class Circuit implements Serializable{
             .connect("E4",gate3.name).connect("E4",gate4.name);
         return this;
     }
+    //fullAdder
     //Input darf nur als start verwendet werden
     //Output darf nur als end verwendet werden
     void connectGates(Gate startGate, Gate endGate){
@@ -600,6 +1043,7 @@ class Circuit implements Serializable{
             input.connectionsToGates.add(endGate);
             drawConnInToGate(input, endGate);
     }
+    //connect
     Circuit connect(String start, String end){
         if(start.equals(end)) throw new IllegalArgumentException("It is not allowed to connect a Component with itself");
         Object startComponent = findStartComponent(start);
@@ -628,6 +1072,7 @@ class Circuit implements Serializable{
         }
         return this;   
     }
+    //connect
         
     private Object findEndComponent(String end){
         //Optional<Gate> 
@@ -668,7 +1113,8 @@ class Circuit implements Serializable{
         }
     }
     
-    private double[] checkIfGateIsNearByX(double x, double y, String start, String end){
+    //checkIfGateIsNearBy
+    private double[] checkIfGateIsNearBy(double x, double y, String start, String end){
         double[] result = new double[2];
         
         for(Gate gate : gates){
@@ -695,7 +1141,7 @@ class Circuit implements Serializable{
 
         return result;
     }
-    
+    //checkIfGateIsNearBy
     private void drawConnectionToOutput(Gate gate, Output output){
         double startXPos = gate.outputCoordinates[0].getX(), startYPos = gate.outputCoordinates[0].getY();
         double outputXPos = output.col*100, outputYPos = output.row*100;
@@ -721,14 +1167,14 @@ class Circuit implements Serializable{
             else turtle.color(0,0,0);
         }
     }
-
+    //drawConnection
     private void drawConnections(double xStart, double yStart, double xEnd, double yEnd, String start, String end){
         int offset = findOffset(end);
         colorOfConnection(start);
         turtle.moveTo(xStart, yStart);
         while(xStart != xEnd-offset){
             
-            double[] result = checkIfGateIsNearByX(xStart, yStart, start, end);
+            double[] result = checkIfGateIsNearBy(xStart, yStart, start, end);
             xStart = result[0];
             yStart = result[1];
             turtle.penDown().forward(1);
@@ -753,7 +1199,7 @@ class Circuit implements Serializable{
         }
         turtle.color(0,0,0);
     }
-
+    //drawConnection
     private void drawConnGateToGate(Gate startGate, Gate endGate){
         double startXPos = startGate.outputCoordinates[0].getX(), startYPos = startGate.outputCoordinates[0].getY();
         int inputsSize = endGate.inputs.size();
@@ -762,7 +1208,9 @@ class Circuit implements Serializable{
             endYPos = inputsSize == 1 ? endGate.inputCoordinates.get(0).getY() : endGate.inputCoordinates.get(1).getY();
             endGate.inputUpdateInfo.add(new UpdateInfo(startGate, null, inputsSize-1));
             connections.add(new Wire(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name)); 
-            drawConnections(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name);  
+            drawConnections(startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name);
+        
+        
     }
 
 
@@ -821,7 +1269,6 @@ class Circuit implements Serializable{
         turtle.left(360);
     }
     
-
     private void drawSquareSquare(int size){
         turtle.penDown();
         for(int i = 1; i <= 4; i++){
@@ -852,8 +1299,8 @@ class Circuit implements Serializable{
             .forward(20)
             .right(90)
             .penDown()
-            .forward(5)
-            .right(180);
+            .forward(5);
+        turtle.right(180);
     }
 
     private void drawGateName(double x, double y, Gate gate){
@@ -863,6 +1310,7 @@ class Circuit implements Serializable{
             .right(90).forward(14)
             .right(90)
             .text(gate.name, Font.COURIER, 11, null).right(90);
+        //turtle.moveTo(x, y).left(90).penUp().forward(30).left(90).forward(20).right(90).text(gate.name, Font.ARIAL, 15, null).right(90);
     }
 
     private void drawOR(double x, double y, Gate gate){
@@ -932,8 +1380,8 @@ class Circuit implements Serializable{
             .forward(4)
             .left(90)
             .forward(2)
-            .text("1", Font.ARIAL, 15, null)
-            .left(90)
+            .text("1", Font.ARIAL, 15, null);
+        turtle.left(90)
             .forward(2)
             .penDown()
             .forward(9)
@@ -1029,6 +1477,7 @@ class Circuit implements Serializable{
         gate.getCoordInOut(x, y, gate);
         drawGateName(x, y, gate);
     }
+    
 
     private void drawInputE(double x, double y, Input input){
         turtle.moveTo(x-35, y-20)
@@ -1076,7 +1525,7 @@ interface Inputs {
     void setValue(HiLo value);
     int getValue();
 }
-
+//Input
 class Input implements Inputs,Serializable{
     private static final long serialVersionUID = 1L;
     int col, row, value;
@@ -1096,19 +1545,13 @@ class Input implements Inputs,Serializable{
     public int getValue(){
         return value;
     }
-
-    @Override
-    public String toString(){
-        String s = "";
-        return s += name + "col= " + col + " row= " + row + " value= " + value;
-
-    }
-
 }
+//Input
 interface Outputs {
     boolean setConnection(int value);
     void setValue(int value);
 }
+//Output
 class Output implements Outputs,Serializable{
     private static final long serialVersionUID = 1L;
     boolean hasConnection = false;
@@ -1132,8 +1575,9 @@ class Output implements Outputs,Serializable{
     public void setValue(int value){
         this.value = value;
     }
-    
 }
+//Output
+//Wire
 //Wire klasse wird nur benötigt um die Verbindungen zwischen den Gattern zu speichern.
 //Dies hilft mir später dabei die Verbindungen zu zeichnen wenn ich alle Verbindungen ernuet zeichnen muss
 class Wire implements Serializable{
@@ -1151,7 +1595,7 @@ class Wire implements Serializable{
     }
     
 }
-
+//Wire
 class UpdateInfo implements Serializable{
     private static final long serialVersionUID = 1L;
     Gate gate;
@@ -1164,4 +1608,10 @@ class UpdateInfo implements Serializable{
     }
 }
 
+//startXPos, startYPos, endXPos, endYPos, startGate.name, endGate.name
 
+/*
+ * Bermerkungen für mich um später den Code nochmal anzupassen:
+ * In der getCoordinateInOut muss ich wahrscheinlich die Koordinaten nochmal ändern um einen ansehnlicheren Code zu erhalten
+ * Generel auch nochmal den gesamten Code nach verbesserungen absuchen um moderneren Code zu erhalten
+ */
