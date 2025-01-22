@@ -118,7 +118,10 @@ class Gate implements Serializable{
                     break;
             } 
         }
-        else throw new IllegalArgumentException("Not all inputs are occupid");
+        else {
+            System.out.println("Inputs for gate: " + name + " are incomplete");
+            return;
+        }
     }
 
     void getCoordInOut(double x, double y, Gate gate){
@@ -167,8 +170,8 @@ class Circuit implements Serializable{
     private ArrayList<ArrayList<Boolean>> fieldCheck = new ArrayList<>();
     transient Turtle turtle;
     private int row,col;
-    Map<Integer,Integer> offsets = new HashMap<>();
-    Map<Integer,Integer> yOffsets = new HashMap<>();
+    private Map<Integer,Integer> offsets = new HashMap<>();
+    private Map<Integer,Integer> yOffsets = new HashMap<>();
     private ArrayList<Wire> connections = new ArrayList<>();
     //Feld erstellen mit einer Standart Größe
     Circuit(String name){
@@ -535,6 +538,8 @@ class Circuit implements Serializable{
         drawOutputA(col*100, row*100, output);
         return this;
     }
+  
+
     //Methode um Gatter hinzuzufügen
     Circuit addComponent(Gate gate){
         if(fieldCheck.get((int)gate.gatePosition.getY()-1).get((int)gate.gatePosition.getX()-1)) throw new IllegalArgumentException("It is not possible to place a Gate on a wire");
@@ -860,7 +865,7 @@ class Circuit implements Serializable{
         turtle.moveTo(x, y)
             .right(90)
             .penUp().forward(10)
-            .right(90).forward(14)
+            .right(90).forward(18)
             .right(90)
             .text(gate.name, Font.COURIER, 11, null).right(90);
     }
@@ -871,24 +876,15 @@ class Circuit implements Serializable{
         drawSquareSquare(50);
         drawInput(x,y);
         drawOutput(x, y);
-        turtle.moveTo(x,y)
-            .penUp()
-            .forward(4)
+        turtle.moveTo(x, y)
             .left(90)
-            .forward(2)
-            .text("1", Font.ARIAL, 15, null);
-        turtle.left(90)
-            .forward(2)
-            .penDown()
-            .forward(9)
-            .backward(9)
             .penUp()
-            .right(90)
+            .forward(12)
             .left(90)
             .forward(8)
             .right(90)
-            .text(">", Font.ARIAL, 15, null)
-            .right(90);
+            .text("≥1", Font.ARIAL, 15, null).right(90);
+        
         gate.getCoordInOut(x, y, gate);
         drawGateName(x, y, gate);
     }
@@ -1101,7 +1097,6 @@ class Input implements Inputs,Serializable{
     public String toString(){
         String s = "";
         return s += name + "col= " + col + " row= " + row + " value= " + value;
-
     }
 
 }

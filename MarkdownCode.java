@@ -203,8 +203,12 @@ Es musste so gezeichnet werden, dass Verbindungen die nicht zueinander gehören,
 
 ### drawConnections
 
-In der drawConnections wird die Verbindung gezeichnet. Als erstes wird ein offset ermittelt mit der `findOffset()`, der dazu dient das sich die Verbindungen nicht überlappen beim Zeichnen. Dieser offset ist von Spalte zu Spalte 
-individuell und wurde vorher in einer Map gespeichert und wird nach dem Zeichnen einer Verbindung verändert.
+In der drawConnections wird die Verbindung gezeichnet. Als erstes wird ein offset ermittelt mit der `findOffset()`, der dazu dient das sich die Verbindungen nicht überlappen beim Zeichnen. 
+
+Bei den Offsets musste ich aufpassen das sie immer anders sind, damit sich die Verbindungen nicht überlappen. Deshalb habe ich es so gelöst, dass es einmal Offsets für die Reihen gibt und dann nochmal Offsets für die Spalten.
+Diese Offsets sind in zwei Maps gespeicht. Die Reihe oder Spalte in der das Gatter liegt, ist der Key für die Value in der Map.
+
+Wenn ein Gatter in der jeweilgen Reihe oder Spalte auftritt und es zu einem Offset führt, wird der Offset danach vergrößert. So kommt es nie vor, dass sich Verbindungen überlappen.
 
 Die Farbe der Verbindung wird dann ermittelt, bei einem HIGH wird die Verbindung grün, bei einem LOW bleibt sie schwarz.
 
@@ -378,6 +382,8 @@ Clerk.markdown(
 Ein anderer Fehler könnte sein, dass der Benutzer versucht ein Gatter, Input oder Output dort zu platzieren, wo sich schon eine andere Komponente befindet. 
 Wenn dies versucht wird kommt eine Fehlermeldung in der Konsole mit dem verweis darauf was falsch gemacht wurde.  
 
+`d.setInput(2,HiLo.HIGH)` führt zu einem Fehler man bekommt deswegen einen Fehler zurück.
+
 ```java
 ${0}
 ```
@@ -393,7 +399,8 @@ d.connect("E1",gate5.name).connect("E2",gate5.name).connect("E3",gate6.name).con
 Clerk.markdown(
     Text.fillOut(
 """
-Wenn man jetzt versucht bei dem Beispiel oben die Methode `setInput()` oder `calcAllOutputs()` versucht kommt eine Fehlermeldung.        
+Wenn man jetzt versucht bei dem Beispiel oben die Methode `setInput()` oder `calcAllOutputs()` versucht kommt eine Fehlermeldung.   
+Die Fehlermeldungen werden in dieser Datei nicht richtig ausgegeben, dafür aber in der SchaltungsSim.java.     
 """));
 
 Clerk.markdown(
@@ -452,6 +459,16 @@ Wenn ein falscher Dateiname angegeben wurde wird dies in der Konsole angezeigt.
 ```java
 ${0}
 ```
+### Zusätzliche Probleme die Aufgetreten sind die jetzt nicht direkt in den Szenarien benutzt werden.
+
+Bei der expandField musste man dafür sorgen, dass bei erweiterung des Feldes alle Komponenten die sich am Rand befinden auch verschoben werden und auch die Koordinaten dieser geändert werden.
+
+Um zu checken ob sich auf einer der Zelle schon ein Gatter befindet oder ob eine Verbindung darüber verläuft musste ich dies in einer ArrayList speichern welche eine ArrayList beinhalten um so das ein 
+zweidimensionales Array in Form von einer ArrayList zu erhalten um genau auf die Feldwerte darauf einzugehen.
+
+
+
+
 
 """, Text.cutOut("./MarkdownCode.java","//Laden Konstruktor")));
 
@@ -575,7 +592,10 @@ class Gate implements Serializable{
                     break;
             } 
         }
-        else throw new IllegalArgumentException("Not all inputs are occupid");
+        else {
+            System.out.println("Inputs for gate: " + name + " are incomplete");
+            return;
+        }
     }
 
     void updateInputs(){
@@ -589,6 +609,12 @@ class Gate implements Serializable{
         });
     }
     //calculateOutput
+
+    @Override
+    public String toString(){
+        String s = " ";
+        return s += name + " postion: " + gatePosition;
+    }
 }
 
 
@@ -652,10 +678,7 @@ class Circuit implements Serializable{
             this.row = loadedCircuit.row;
             this.turtle = new Turtle(114 * this.col, 114 * this.row);  
             new FieldDraw(this).drawCircuitField(); 
-            drawAllInputs();
-            drawAllOutputs();
-            drawAllComponents();                
-            drawAllConnections();               
+                           
         } else {
             System.err.println("Wrong filename: " + fileName);
         }
@@ -946,6 +969,13 @@ class Circuit implements Serializable{
         for(int i = 1; i <= col; i++){
             offsets.put(tempCol+i, 5);
         }
+    }
+
+    private void drawEverything(){
+        drawAllInputs();
+        drawAllComponents();
+        drawAllOutputs();
+        drawAllConnections();
     }
     //Wird benötigt um nachdem ändern eines Inputs das Feld zu verändern
     private void drawAllInputs(){
@@ -1319,24 +1349,15 @@ class Circuit implements Serializable{
         drawSquareSquare(50);
         drawInput(x,y);
         drawOutput(x, y);
-        turtle.moveTo(x,y)
-            .penUp()
-            .forward(4)
+        turtle.moveTo(x, y)
             .left(90)
-            .forward(2)
-            .text("1", Font.ARIAL, 15, null);
-        turtle.left(90)
-            .forward(2)
-            .penDown()
-            .forward(9)
-            .backward(9)
             .penUp()
-            .right(90)
+            .forward(12)
             .left(90)
             .forward(8)
             .right(90)
-            .text(">", Font.ARIAL, 15, null)
-            .right(90);
+            .text("≥1", Font.ARIAL, 15, null).right(90);
+        
         gate.getCoordInOut(x, y, gate);
         drawGateName(x, y, gate);
     }
@@ -1544,6 +1565,12 @@ class Input implements Inputs,Serializable{
 
     public int getValue(){
         return value;
+    }
+
+    @Override
+    public String toString(){
+        String s = "";
+        return s += name + "col= " + col + " row= " + row + " value= " + value;
     }
 }
 //Input
