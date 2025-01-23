@@ -27,20 +27,27 @@ _by Erik Thorleif Damm_
 Clerk.markdown(
     Text.fillOut(
 """
+## Wie kam ich auf das Design der Schaltung?
+
+Ich wollte einen Simulator haben, der das Lernen von Gatter-Schaltungen einfach beibringt, weshalb ich mich für ein einfaches Design entschieden habe in Form von Zellen.
+Auch beim Verbinden habe ich es so gelöst, dass der Benutzer nicht unbedingt Kenntnisse von Gatter haben muss, um eine Schaltung zu entwerfen.
+
 ## 1. Szenario Grundlegende Gatter:
-Als erstes muss der Benutzer eine Feld mit der Klasse Circuit erstellen wo drauf dann die spätere Schaltung dargestellt wird. Dafür kann der Benutzer aus drei Konstruktoren auswählen.
+Als erstes muss der Benutzer ein Feld mit der Klasse Circuit erstellen, wo drauf dann die spätere Schaltung dargestellt wird. Dafür kann der Benutzer aus drei Konstruktoren auswählen.
 ### Verschiedene Konstruktoren
+
 1. Einfach nur einen String übergeben um ein Feld mit der Standardgröße(6x6) zu erhalten
 2. String und größe des Feldes angeben
-3. String und Dateiname, um eine gespeicherte Schaltung laden zu können. Wodrauf ich in der späteren Protokollierung nochmal genauer drauf eingehen werde.
+3. String und Dateiname, um eine gespeicherte Schaltung laden zu können. Worauf ich in der späteren Protokollierung nochmal genauer darauf eingehen werde.
 
 Um ein Feld später auch noch zu vergrößern, gibt es die Methode `expandField()`
 
-Jetzt im ersten Szenario schickt es einfach nur einen Namen anzugeben und ein Feld mit der Standardgröße zu erhalten:
+Jetzt im ersten Szenario reicht es einen Namen anzugeben und ein Feld mit der Standardgröße zu erhalten:
 
 `Circuit c = new Circuit(“C”);`
 
 Das zeichnen des Feldes habe ich mit einer verschachtelten Klasse(FieldDraw) realisiert, da ich mir dachte das es wenig Sinn machen ein Feld zu erstellen ohne eine Schaltung zu besitzen
+
 
 ```java
 ${0}
@@ -68,6 +75,20 @@ ${0}
 ```
         
 """, Text.cutOut("./MarkdownCode.java", "//Gate")));
+
+Clerk.markdown(
+    Text.fillOut(
+"""
+## Abspeichern der Koordinaten (In- und Output)
+
+Beim Erstellen eines Gatters werden direkt die In- und Output-Koordinaten abgespeichert. 
+Diese werden nämlich beim Verbinden benötigt, um von den richtigen Outputs der Gatter zum richtigen Input eines anderen Gatters zu zeichnen.
+
+```java
+${0}
+```
+
+""", Text.cutOut("./MarkdownCode.java","//Koordinaten")));
 
 Clerk.markdown(
     Text.fillOut(
@@ -270,6 +291,8 @@ Clerk.markdown(
 ```java
 ${0}
 ```   
+Die `calculateOutput()` gehört zur Klasse Gate und wird in der `calcAllOutputs()` immer mit den Gattern Objekten aufgerufen.
+
 ### Ausgabe
 Um die unten zu sehende Augabe zu erhalten, musste folgendes gemacht werden:
 
@@ -340,7 +363,7 @@ In diesem Szenario kann der Benutzer mit der vom Proramm mitgegebenen Methode fu
 ### Erklärung eines Volladdierers:
 
 Ein Volladdierer besteht aus drei Inputs, zwei Outputs(Sum und Cout) und 5 Gattern.
-Mit einem Volladdierer kann man drei einstellige Binärzahlen addieren und bekommt bei dem Output einmal das Ergebnis dieser Rechnung und den Übertrag.
+Mit einem Volladdierer kann man drei einstellige Binärzahlen addieren und bekommt bei dem Output einmal das Ergebnis dieser Rechnung und den Übertrag. 
 
 Man muss in diesem Programm einfach ein leeres Feld erstellen und die Methode fullAdder() aufrufen und die Schaltung wird visuell Dargestellt und kann verwendet werden wenn man noch Dinge dazu machen will ist dies möglich.
   
@@ -365,7 +388,7 @@ Clerk.markdown(
 Dieses Szenario soll zeigen, was passiert wenn ein Benutzer eine falsche Schaltung baut und sie ausführen möchte. 
 Ich bin ja in den anderen Szenarien schon einmal auf möglich Fehler eingegangen und wie man sie verhindern kann, aber in diesem Teil werde ich noch einmal genauer darauf eingehen.
 
-Einer der Fehler könnte sein das der Benutzer es vergessen hat, nicht alle Inputs eines Gatters zu belegen und die Schaltung ausführen möchte. 
+Einer der Fehler könnte sein das der Benutzer es vergessen hat, alle Inputs eines Gatters zu belegen und die Schaltung ausführen möchte. 
 Da dies zu einem Fehler führen würde, da die Outputs nicht richtig berechnet werden, verhindert das Programm die Ausführung und sagt dem Benutzer in der Konsole was er falsch gemacht hat.
 
 ```java
@@ -459,12 +482,14 @@ Wenn ein falscher Dateiname angegeben wurde wird dies in der Konsole angezeigt.
 ```java
 ${0}
 ```
-### Zusätzliche Probleme die Aufgetreten sind die jetzt nicht direkt in den Szenarien benutzt werden.
+## Zusätzliche Probleme die Aufgetreten sind die nur indirekt in den Szenarien vorkommen.
 
 Bei der expandField musste man dafür sorgen, dass bei erweiterung des Feldes alle Komponenten die sich am Rand befinden auch verschoben werden und auch die Koordinaten dieser geändert werden.
 
 Um zu checken ob sich auf einer der Zelle schon ein Gatter befindet oder ob eine Verbindung darüber verläuft musste ich dies in einer ArrayList speichern welche eine ArrayList beinhalten um so das ein 
 zweidimensionales Array in Form von einer ArrayList zu erhalten um genau auf die Feldwerte darauf einzugehen.
+
+Mit der Methode `deleteAll` kann man die gesamte Schaltung löschen und von vorne anfangen.
 
 
 
@@ -549,6 +574,7 @@ class Gate implements Serializable{
         if(inputs.size() == 0) throw new IllegalArgumentException("Es muss mindestens ein Input vorhanden sein um diesen zu ändern");
         inputs.set(index, ~inputs.get(index));
     }
+    //Koordinaten
     void getCoordInOut(double x, double y, Gate gate){
         
         if(gate.type.equals("NOT")){
@@ -566,6 +592,7 @@ class Gate implements Serializable{
         }
         
     }
+    //Koordinaten
     //calculateOutput
     void calculateOutput(){
         //Fehlerkontrolle1
@@ -684,7 +711,7 @@ class Circuit implements Serializable{
         }
     }
     //Laden Konstruktor
-    //Circuit
+    
     private static class FieldDraw{
         private Circuit circuit;
 
@@ -799,6 +826,7 @@ class Circuit implements Serializable{
         }
         
     }
+    //Circuit
     //Speichern und laden
     void saveCircuit(String fileName) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
@@ -1002,6 +1030,22 @@ class Circuit implements Serializable{
         outputs.add(output);
         drawOutputA(col*100, row*100, output);
         return this;
+    }
+
+    void deleteAll(){
+        connections.clear();
+        gates.clear();
+        inputs.clear();
+        outputs.clear();
+        offsets.replaceAll((k,v) -> 5);
+        yOffsets.replaceAll((k,v) -> 5);
+        for(ArrayList<Boolean> row : fieldCheck){
+            for(int i = 0; i < row.size(); i++){
+                row.set(i, false);
+            }
+        }
+        turtle.reset();
+        new FieldDraw(this).drawCircuitField();
     }
     //Methode um Gatter hinzuzufügen
     //addComponent

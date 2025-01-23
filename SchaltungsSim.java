@@ -159,6 +159,10 @@ class Gate implements Serializable{
     }
 }
 
+interface Circuits {
+    Circuit addComponent(Gate gate);
+    Circuit addInput()
+}
 
 //Mit der Circuit Klasse wird das Programm betrieben
 class Circuit implements Serializable{
@@ -539,7 +543,21 @@ class Circuit implements Serializable{
         return this;
     }
   
-
+    void deleteAll(){
+        connections.clear();
+        gates.clear();
+        inputs.clear();
+        outputs.clear();
+        offsets.replaceAll((k,v) -> 5);
+        yOffsets.replaceAll((k,v) -> 5);
+        for(ArrayList<Boolean> row : fieldCheck){
+            for(int i = 0; i < row.size(); i++){
+                row.set(i, false);
+            }
+        }
+        turtle.reset();
+        new FieldDraw(this).drawCircuitField();
+    }
     //Methode um Gatter hinzuzufügen
     Circuit addComponent(Gate gate){
         if(fieldCheck.get((int)gate.gatePosition.getY()-1).get((int)gate.gatePosition.getX()-1)) throw new IllegalArgumentException("It is not possible to place a Gate on a wire");
@@ -1098,12 +1116,13 @@ class Input implements Inputs,Serializable{
         String s = "";
         return s += name + "col= " + col + " row= " + row + " value= " + value;
     }
-
 }
+
 interface Outputs {
     boolean setConnection(int value);
     void setValue(int value);
 }
+
 class Output implements Outputs,Serializable{
     private static final long serialVersionUID = 1L;
     boolean hasConnection = false;
